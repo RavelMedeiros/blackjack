@@ -1,0 +1,4289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackjack — Jogue e Aprenda</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at center, #1a6b3a 0%, #0d3d20 70%, #051a0d 100%);
+    min-height: 100vh;
+    color: #fff;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  .app {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ============ HEADER ============ */
+  .header {
+    grid-column: 1 / -1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(212,175,55,0.3);
+    min-height: 48px;
+  }
+  .header h1 {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #d4af37;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .header .balance-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: end;
+  }
+  .header .balance {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .header .balance::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd700'><circle cx='12' cy='12' r='10' stroke='%23d4af37' stroke-width='2' fill='%23ffd700'/><text x='12' y='16' text-anchor='middle' font-size='12' font-weight='bold' fill='%23665100' font-family='sans-serif'>$</text></svg>");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+  .icon-btn-small {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .icon-btn-small svg { width: 14px; height: 14px; }
+  .icon-btn-small:hover {
+    color: #fff;
+    transform: rotate(-30deg);
+  }
+  .header .btn-rules {
+    background: rgba(212,175,55,0.15);
+    color: #d4af37;
+    border: 1px solid rgba(212,175,55,0.4);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .header .btn-rules:hover { background: rgba(212,175,55,0.25); }
+
+  /* ============ TABLE ============ */
+  .table {
+    background: linear-gradient(135deg, #1a6b3a 0%, #145a2f 100%);
+    border-radius: 16px;
+    padding: 24px;
+    border: 3px solid #5d3a1a;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.5);
+    min-height: 560px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .table::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px dashed rgba(212,175,55,0.3);
+    border-radius: 12px;
+    pointer-events: none;
+  }
+
+  /* ============ DEALER & PLAYER AREAS ============ */
+  .area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    position: relative;
+  }
+  .area-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hand {
+    display: flex;
+    gap: 4px;
+    min-height: 155px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .hand-status {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    min-height: 20px;
+    text-align: center;
+    padding: 2px 12px;
+  }
+  .hand-status.bust { color: #ff6b6b; }
+  .hand-status.blackjack { color: #ffd700; }
+  .hand-status.win { color: #51cf66; }
+
+  /* split hands container */
+  .player-hands {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .player-hand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .player-hand.active {
+    background: rgba(255,215,0,0.1);
+    box-shadow: 0 0 16px rgba(255,215,0,0.3);
+  }
+  .player-hand .bet-tag {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+  }
+
+  /* ============ CARDS ============ */
+  .card {
+    width: 100px;
+    height: 145px;
+    background: #fafafa;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    position: relative;
+    color: #222;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.1);
+    animation: dealCard 0.45s ease-out;
+    margin-left: -28px;
+  }
+  .card:first-child { margin-left: 0; }
+  @keyframes dealCard {
+    from { transform: translateY(-60px) translateX(-20px) rotate(-15deg); opacity: 0; }
+    to { transform: translateY(0) translateX(0) rotate(0); opacity: 1; }
+  }
+  .card.red { color: #c92a2a; }
+  .card.black { color: #1a1a1a; }
+  .card .top, .card .bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+  }
+  .card .top { align-items: flex-start; }
+  .card .bottom {
+    align-items: flex-end;
+    transform: rotate(180deg);
+  }
+  .card .rank { font-size: 22px; font-weight: 700; }
+  .card .suit-small { font-size: 16px; }
+  .card .suit-big {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 46px;
+  }
+  .card.back {
+    background: linear-gradient(135deg, #8b1538 0%, #5a0d22 100%);
+    border: 2px solid #d4af37;
+  }
+  .card.back::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(212,175,55,0.5);
+    border-radius: 4px;
+    background-image: repeating-linear-gradient(
+      45deg, transparent, transparent 4px,
+      rgba(212,175,55,0.15) 4px, rgba(212,175,55,0.15) 8px
+    );
+  }
+
+  /* ============ FEEDBACK BAR ============ */
+  .feedback {
+    margin: 8px 0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .feedback-state {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .feedback-strategy {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.4;
+    min-height: 16px;
+  }
+  .feedback.correct {
+    background: rgba(81,207,102,0.15);
+    border-color: rgba(81,207,102,0.5);
+  }
+  .feedback.correct .feedback-strategy { color: #b2f2bb; }
+  .feedback.wrong {
+    background: rgba(255,107,107,0.15);
+    border-color: rgba(255,107,107,0.5);
+  }
+  .feedback.wrong .feedback-strategy { color: #ffc9c9; }
+  .feedback.hint {
+    background: rgba(255,215,0,0.15);
+    border-color: rgba(255,215,0,0.5);
+  }
+  .feedback.hint .feedback-strategy { color: #fff3bf; }
+  .feedback.result-win {
+    background: rgba(81,207,102,0.2);
+    border-color: rgba(81,207,102,0.6);
+  }
+  .feedback.result-win .feedback-state { color: #b2f2bb; font-size: 16px; }
+  .feedback.result-loss {
+    background: rgba(255,107,107,0.2);
+    border-color: rgba(255,107,107,0.6);
+  }
+  .feedback.result-loss .feedback-state { color: #ffc9c9; font-size: 16px; }
+  .feedback.result-push {
+    background: rgba(173,181,189,0.2);
+    border-color: rgba(173,181,189,0.5);
+  }
+  .feedback.result-push .feedback-state { color: #dee2e6; font-size: 16px; }
+
+  /* ============ ACTIONS ============ */
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 12px;
+  }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 90px;
+    backdrop-filter: blur(4px);
+  }
+  .btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-1px);
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: #d4af37;
+    color: #1a1a1a;
+    border-color: #b8941f;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #e6c149;
+  }
+  .btn-hint {
+    background: rgba(78,127,255,0.25);
+    border-color: rgba(78,127,255,0.6);
+    color: #d0dcff;
+  }
+  .btn-hint:hover:not(:disabled) {
+    background: rgba(78,127,255,0.4);
+  }
+  .btn-danger {
+    background: rgba(255,107,107,0.2);
+    border-color: rgba(255,107,107,0.5);
+  }
+  .kbd-hint {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 400;
+  }
+  body.casino-mode .kbd-hint { display: none; }
+
+  /* ============ BETTING ============ */
+  .betting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+  }
+  .current-bet {
+    font-size: 18px;
+    color: #ffd700;
+    font-weight: 600;
+  }
+  .chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .chip {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px dashed rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  }
+  .chip:hover { transform: scale(1.1); }
+  .chip-10 { background: #4dabf7; }
+  .chip-25 { background: #20c997; }
+  .chip-50 { background: #fd7e14; }
+  .chip-100 { background: #1a1a1a; border-color: rgba(212,175,55,0.6); }
+  .chip-clear {
+    background: rgba(255,255,255,0.1);
+    border-style: solid;
+    font-size: 11px;
+  }
+
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .panel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .panel h3 {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #d4af37;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+    padding-bottom: 8px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .stat {
+    background: rgba(0,0,0,0.3);
+    padding: 8px;
+    border-radius: 6px;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffd700;
+  }
+  .stat-value.small { font-size: 14px; }
+
+  /* ============ MODAL (Rules) ============ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #1a1a1a;
+    border: 1px solid rgba(212,175,55,0.5);
+    border-radius: 12px;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px 24px 24px 24px;
+    color: #fff;
+    position: relative;
+  }
+  .modal-close-x {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.15s;
+    z-index: 5;
+  }
+  .modal-close-x:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  .modal-close-x svg { width: 16px; height: 16px; }
+  .modal h2 {
+    color: #d4af37;
+    margin-bottom: 16px;
+    font-size: 20px;
+  }
+  .modal h3 {
+    color: #ffd700;
+    margin: 16px 0 8px 0;
+    font-size: 15px;
+  }
+  .modal p, .modal li {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #e0e0e0;
+    margin-bottom: 6px;
+  }
+  .modal ul { padding-left: 20px; margin-bottom: 8px; }
+  .modal .close-btn {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .modal kbd {
+    background: rgba(212,175,55,0.2);
+    border: 1px solid rgba(212,175,55,0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #ffd700;
+    font-family: monospace;
+  }
+
+  /* ============ GAME MESSAGE ============ */
+  .game-message {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 8px;
+    min-height: 20px;
+  }
+
+  /* ============ ANIMATION ============ */
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .flashing { animation: flash 0.4s ease 2; }
+
+  /* ============ WRONG-MOVE: red flash + gray freeze + modal ============ */
+  @keyframes redFlash {
+    0% { background: rgba(255, 30, 30, 0); }
+    25% { background: rgba(255, 30, 30, 0.55); }
+    100% { background: rgba(255, 30, 30, 0); }
+  }
+  .red-flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 250;
+    animation: redFlash 0.5s ease-out;
+  }
+
+  @keyframes greenFlash {
+    0% { background: rgba(81, 207, 102, 0); }
+    25% { background: rgba(81, 207, 102, 0.45); }
+    100% { background: rgba(81, 207, 102, 0); }
+  }
+  .green-flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 250;
+    animation: greenFlash 0.6s ease-out;
+  }
+
+  @keyframes loseFlash {
+    0% { background: rgba(255, 30, 30, 0); }
+    25% { background: rgba(255, 30, 30, 0.4); }
+    100% { background: rgba(255, 30, 30, 0); }
+  }
+  .lose-flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 250;
+    animation: loseFlash 0.6s ease-out;
+  }
+
+  .wrong-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,20,20,0.78);
+    backdrop-filter: grayscale(100%) blur(2px);
+    -webkit-backdrop-filter: grayscale(100%) blur(2px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 16px;
+    animation: fadeIn 0.25s ease-out;
+  }
+  .wrong-overlay.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .wrong-modal {
+    background: linear-gradient(135deg, #2a1818 0%, #1a0e0e 100%);
+    border: 2px solid rgba(255,107,107,0.55);
+    border-radius: 18px;
+    padding: 36px 40px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(255,30,30,0.25), 0 0 0 1px rgba(255,107,107,0.2);
+    animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .wrong-modal .icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+  .wrong-modal h2 {
+    color: #ff6b6b;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  /* Cards-at-decision display inside the wrong-move modal */
+  .wrong-cards-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 12px 0 24px 0;
+    padding: 16px;
+    background: rgba(20,40,28,0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .wrong-cards-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .wrong-cards-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+  .wrong-cards-hand {
+    display: flex;
+    gap: 2px;
+    min-height: 90px;
+    align-items: center;
+  }
+  .wrong-cards-hand .card {
+    width: 60px;
+    height: 86px;
+    margin-left: -16px;
+    padding: 4px 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    animation: none;
+  }
+  .wrong-cards-hand .card:first-child { margin-left: 0; }
+  .wrong-cards-hand .card .rank { font-size: 14px; }
+  .wrong-cards-hand .card .suit-small { font-size: 10px; }
+  .wrong-cards-hand .card .suit-big { font-size: 28px; }
+  .wrong-vs {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+  .wrong-modal .you-chose {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .wrong-modal .you-chose-act {
+    font-size: 18px;
+    color: #ff8787;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,107,107,0.4);
+  }
+  .wrong-modal .arrow {
+    font-size: 24px;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 6px;
+  }
+  .wrong-modal .should-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .wrong-modal .should-act {
+    font-size: 36px;
+    color: #51cf66;
+    font-weight: 800;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 24px rgba(81,207,102,0.4);
+  }
+  .wrong-modal .explanation {
+    font-size: 14px;
+    color: #d8d8d8;
+    line-height: 1.65;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    border-left: 3px solid #51cf66;
+  }
+  .wrong-modal button {
+    background: #d4af37;
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 36px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .wrong-modal button:hover {
+    background: #e6c149;
+    transform: translateY(-1px);
+  }
+
+  /* ============ TOAST (casino mode floating message) ============ */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.5);
+    font-size: 13px;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.25s;
+    text-align: center;
+    max-width: 80%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast-state { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .toast-strategy { font-size: 12px; color: rgba(255,255,255,0.85); }
+  .toast.correct { border-color: rgba(81,207,102,0.6); }
+  .toast.correct .toast-strategy { color: #b2f2bb; }
+  .toast.wrong { border-color: rgba(255,107,107,0.6); }
+  .toast.wrong .toast-strategy { color: #ffc9c9; }
+  .toast.hint { border-color: rgba(255,215,0,0.6); }
+  .toast.hint .toast-strategy { color: #fff3bf; }
+  .toast.result-win .toast-state { color: #b2f2bb; }
+  .toast.result-loss .toast-state { color: #ffc9c9; }
+  .toast.result-push .toast-state { color: #dee2e6; }
+
+  /* ============ CASINO MODE (immersive layout) ============ */
+  body.casino-mode .app { grid-template-columns: 1fr; }
+  body.casino-mode #feedback { display: none; }
+  body.casino-mode #game-message { display: none; }
+  body.casino-mode .area-label { display: none; }
+  body.casino-mode .header h1 { font-size: 16px; }
+  body.casino-mode .table {
+    height: 78vh;
+    min-height: 520px;
+    background: linear-gradient(135deg, #1a6b3a 0%, #145a2f 50%, #0f4625 100%);
+    position: relative;
+    overflow: visible;
+  }
+  body.casino-mode .table::before { display: none; }
+
+  /* Action buttons: round, black, like real casino chips */
+  body.casino-mode .actions {
+    display: flex !important;
+    justify-content: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 16px 0;
+  }
+  body.casino-mode .actions .btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    color: rgba(255,255,255,0.92);
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 0;
+    min-width: 0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1.1;
+  }
+  body.casino-mode .actions .btn:hover:not(:disabled) {
+    background: rgba(0,0,0,0.75);
+    border-color: rgba(212,175,55,0.5);
+    transform: translateY(-1px);
+  }
+  body.casino-mode .actions .btn:disabled { display: none; }
+  body.casino-mode #btn-hint { display: none !important; }
+  body.casino-mode .actions .btn .kbd-hint {
+    display: inline-block;
+    font-size: 10px;
+    opacity: 0.55;
+    margin: 0;
+    font-weight: 400;
+  }
+
+  /* Betting wraps chips at bottom-left, deal button is positioned independently */
+  body.casino-mode .betting {
+    position: static;
+    display: contents;
+  }
+  body.casino-mode .chips {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 0;
+    z-index: 5;
+  }
+  body.casino-mode .current-bet { display: none; }
+  body.casino-mode .chips {
+    flex-direction: column;
+    gap: 0;
+    align-items: flex-start;
+  }
+  body.casino-mode .chip {
+    width: 64px;
+    height: 64px;
+    margin: 0 0 8px 0;
+    border-width: 4px;
+    font-size: 15px;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.15s;
+  }
+  body.casino-mode .chip:hover { transform: scale(1.08); z-index: 100; }
+  body.casino-mode .chip-clear {
+    width: 64px;
+    height: 64px;
+    margin: 4px 0 8px 0;
+    font-size: 11px;
+    border-width: 3px;
+    align-self: center;
+  }
+  body.casino-mode #btn-deal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    padding: 0;
+    margin: 0;
+    font-size: 0;
+    background: transparent;
+    color: rgba(212,175,55,0.55);
+    border: none;
+    box-shadow: none;
+    transition: transform 0.15s, color 0.15s;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  body.casino-mode #btn-deal::after {
+    content: "";
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 32px 0 32px 52px;
+    border-color: transparent transparent transparent currentColor;
+    margin-left: 8px;
+  }
+  body.casino-mode #btn-deal:hover:not(:disabled) {
+    transform: translate(-50%, -50%) scale(1.1);
+    color: rgba(212,175,55,0.9);
+  }
+  body.casino-mode #btn-deal:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Bet chip display (top-left of player area) */
+  .casino-bet-display { display: none; }
+  body.casino-mode .casino-bet-display {
+    display: flex;
+    position: absolute;
+    top: 22px;
+    left: 28px;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  body.casino-mode.in-round .casino-bet-display:not(.empty):hover {
+    transform: scale(1.06);
+  }
+  body.casino-mode.in-round .casino-bet-display:not(.empty)::after {
+    content: "←";
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 26px;
+    height: 26px;
+    background: rgba(0,0,0,0.85);
+    border-radius: 50%;
+    color: #ffd700;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 26px;
+    text-align: center;
+    border: 1px solid rgba(212,175,55,0.6);
+    opacity: 0;
+    transition: opacity 0.15s;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body.casino-mode.in-round .casino-bet-display:not(.empty):hover::after {
+    opacity: 1;
+  }
+  /* Outside an active round, the bet chip is just a display, not interactive */
+  body.casino-mode:not(.in-round) .casino-bet-display { cursor: default; }
+  body.casino-mode .casino-bet-display .bet-amt { display: none; }
+  @keyframes betPulse {
+    0% { transform: scale(1); box-shadow: 0 5px 14px rgba(0,0,0,0.6); }
+    40% { transform: scale(1.18); box-shadow: 0 5px 24px rgba(255,215,0,0.6); }
+    100% { transform: scale(1); box-shadow: 0 5px 14px rgba(0,0,0,0.6); }
+  }
+  .bet-chip.pulse { animation: betPulse 0.45s ease-out; }
+  body.casino-mode .casino-bet-display .bet-chip {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: #2563d9;
+    border: 4px dashed rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.6);
+  }
+  body.casino-mode .casino-bet-display.empty .bet-chip {
+    opacity: 0.25;
+    background: #555;
+  }
+  body.casino-mode .casino-bet-display.empty .bet-amt { display: none; }
+
+
+  /* House edge note on the felt — subtle but visible */
+  .house-edge-note {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    letter-spacing: 1px;
+    pointer-events: none;
+    text-align: center;
+    z-index: 1;
+    white-space: nowrap;
+  }
+
+  /* Hide normal header buttons except home/exit */
+  body.casino-mode .header .balance,
+  body.casino-mode .header .btn-rules,
+  body.casino-mode .header .auto-toggle,
+  body.casino-mode .header .reset-btn { opacity: 0.6; }
+  .casino-toggle {
+    background: rgba(212,175,55,0.15);
+    color: #d4af37;
+    border: 1px solid rgba(212,175,55,0.4);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .casino-toggle:hover { background: rgba(212,175,55,0.25); }
+  body.casino-mode .casino-toggle {
+    background: rgba(81,207,102,0.2);
+    color: #b2f2bb;
+    border-color: rgba(81,207,102,0.5);
+  }
+  .reset-btn {
+    background: rgba(255,107,107,0.15);
+    color: #ffc9c9;
+    border: 1px solid rgba(255,107,107,0.4);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .reset-btn:hover { background: rgba(255,107,107,0.25); }
+
+  .auto-toggle {
+    background: rgba(78,127,255,0.15);
+    color: #d0dcff;
+    border: 1px solid rgba(78,127,255,0.4);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .auto-toggle:hover { background: rgba(78,127,255,0.25); }
+  .auto-toggle.active {
+    background: rgba(81,207,102,0.25);
+    color: #b2f2bb;
+    border-color: rgba(81,207,102,0.6);
+    animation: autopulse 1.5s ease-in-out infinite;
+  }
+  @keyframes autopulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(81,207,102,0); }
+    50% { box-shadow: 0 0 0 4px rgba(81,207,102,0.3); }
+  }
+  .robot-indicator {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(81,207,102,0.2);
+    border: 1px solid rgba(81,207,102,0.5);
+    color: #b2f2bb;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: none;
+    z-index: 5;
+  }
+  body.auto-active .robot-indicator { display: block; }
+  body.auto-active .chip,
+  body.auto-active #btn-deal {
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  /* ============ NEXT-ROUND WRAP (occupies the action-buttons slot) ============ */
+  body.casino-mode #next-round-wrap {
+    margin-top: 16px;
+    margin-bottom: 70px;
+    text-align: center;
+  }
+  body.casino-mode #next-round-wrap .btn-primary {
+    border-radius: 999px;
+    padding: 14px 36px;
+    font-size: 14px;
+    font-weight: 700;
+    background: #d4af37;
+    color: #1a1a1a;
+    box-shadow: 0 4px 14px rgba(212,175,55,0.3);
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  body.casino-mode #next-round-wrap .btn-primary:hover {
+    background: #e6c149;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(212,175,55,0.45);
+  }
+  @media (min-width: 769px) {
+    body.casino-mode #next-round-wrap { margin-bottom: 80px; }
+  }
+
+  /* ============ FLOATING STATS WIDGET (inside table) ============ */
+  .table-stats {
+    position: absolute;
+    bottom: 38px;
+    right: 12px;
+    z-index: 6;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    overflow: hidden;
+    max-width: 240px;
+  }
+  .table-stats.collapsed {
+    background: rgba(0,0,0,0.4);
+  }
+  .table-stats.collapsed .stats-popout { display: none; }
+  .stats-toggle-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    width: 100%;
+  }
+  .stats-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+    color: #d4af37;
+    flex-shrink: 0;
+  }
+  .stats-toggle-btn:hover { color: #fff; }
+  .stats-toggle-btn .stats-summary {
+    color: #ffd700;
+    font-weight: 700;
+  }
+  .stats-popout {
+    padding: 0 12px 12px 12px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 4px;
+    padding-top: 12px;
+  }
+  .stats-popout .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .stats-popout .stat {
+    background: rgba(0,0,0,0.35);
+    padding: 6px 8px;
+    border-radius: 5px;
+    min-width: 0;
+  }
+  .stats-popout .stat-label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stats-popout .stat-value { font-size: 15px; }
+  .stats-popout .stat-value.small { font-size: 13px; }
+
+  /* ============ DESKTOP POLISH (≥769px) — table near fullscreen ============ */
+  @media (min-width: 769px) {
+    body { padding: 16px; }
+    .app { gap: 12px; max-width: 1600px; }
+
+    .header { padding: 10px 24px; min-height: 52px; }
+    .header h1 { font-size: 24px; letter-spacing: 3px; }
+    .header .balance { font-size: 18px; }
+
+    /* Table near-fullscreen with FIXED height — same before and after the game starts */
+    body.casino-mode .table {
+      height: calc(100vh - 100px);
+      min-height: 600px;
+      padding: 32px 28px;
+    }
+
+    /* Cards bigger for fullscreen feel */
+    .card { width: 110px; height: 156px; margin-left: -30px; }
+    .card .rank { font-size: 24px; }
+    .card .suit-small { font-size: 17px; }
+    .card .suit-big { font-size: 52px; }
+    .hand { min-height: 170px; }
+
+    body.casino-mode #btn-deal { width: 110px; height: 110px; }
+    body.casino-mode #btn-deal::after {
+      border-width: 28px 0 28px 46px;
+      margin-left: 7px;
+    }
+
+    /* Anchor actions absolutely so they don't float to the bottom regardless of card content */
+    body.casino-mode .actions {
+      position: absolute;
+      bottom: 70px;
+      left: 0;
+      right: 0;
+      gap: 18px;
+      margin: 0;
+      padding: 0;
+      z-index: 4;
+    }
+    body.casino-mode #next-round-wrap {
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      margin: 0;
+    }
+    /* Reserve bottom space in the table flex flow so cards don't run into the buttons */
+    body.casino-mode .table { padding-bottom: 170px; }
+    body.casino-mode .actions .btn {
+      width: 78px; height: 78px;
+      font-size: 12px;
+      transition: transform 0.18s, background 0.18s, border-color 0.18s, color 0.18s;
+    }
+    body.casino-mode .actions .btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      background: rgba(0,0,0,0.7);
+      border-color: rgba(212,175,55,0.7);
+      color: #ffd700;
+    }
+    body.casino-mode .actions .btn .kbd-hint { font-size: 11px; }
+
+    body.casino-mode .chips { gap: 16px; bottom: 32px; left: 32px; }
+    body.casino-mode .chip { width: 68px; height: 68px; font-size: 16px; }
+    body.casino-mode .chip:hover { transform: scale(1.12); }
+    body.casino-mode .chip-clear { width: 64px; height: 64px; font-size: 11px; }
+
+    body.casino-mode .casino-bet-display { top: 28px; left: 32px; }
+    body.casino-mode .casino-bet-display .bet-chip {
+      width: 86px; height: 86px; font-size: 14px; border-width: 4px;
+    }
+
+    .house-edge-note { font-size: 11px; bottom: 14px; opacity: 0.55; }
+
+    /* Stats widget — slightly bigger on desktop, sits above the house-edge note */
+    .table-stats { bottom: 44px; right: 16px; max-width: 280px; }
+    .stats-popout .stat-value { font-size: 18px; }
+  }
+
+  /* Narrow desktop (769-1100px) — scaled-down for smaller laptops */
+  @media (min-width: 769px) and (max-width: 1100px) {
+    body { padding: 12px; }
+    .header { padding: 10px 16px; min-height: 48px; }
+    .header h1 { font-size: 20px; letter-spacing: 2px; }
+    .header .balance { font-size: 16px; }
+
+    body.casino-mode .table {
+      height: calc(100vh - 90px);
+      padding: 22px 18px;
+    }
+
+    .card { width: 92px; height: 130px; margin-left: -24px; }
+    .card .rank { font-size: 20px; }
+    .card .suit-small { font-size: 14px; }
+    .card .suit-big { font-size: 44px; }
+    .hand { min-height: 142px; }
+
+    body.casino-mode #btn-deal { width: 96px; height: 96px; }
+    body.casino-mode #btn-deal::after {
+      border-width: 24px 0 24px 40px;
+      margin-left: 6px;
+    }
+
+    body.casino-mode .actions {
+      gap: 12px;
+      margin-top: 18px;
+      padding-bottom: 60px;
+    }
+    body.casino-mode .actions .btn { width: 68px; height: 68px; font-size: 11px; }
+
+    body.casino-mode .chips { gap: 12px; bottom: 22px; left: 22px; }
+    body.casino-mode .chip { width: 58px; height: 58px; font-size: 14px; }
+    body.casino-mode .chip-clear { width: 56px; height: 56px; font-size: 10px; }
+
+    body.casino-mode .casino-bet-display { top: 20px; left: 22px; }
+    body.casino-mode .casino-bet-display .bet-chip {
+      width: 72px; height: 72px; font-size: 12px; border-width: 3px;
+    }
+
+    .table-stats { bottom: 38px; right: 12px; max-width: 220px; }
+    .stats-popout .stat-value { font-size: 15px; }
+  }
+
+  /* Wide desktop (≥1280px) */
+  @media (min-width: 1280px) {
+    .card { width: 118px; height: 168px; margin-left: -32px; }
+    .card .rank { font-size: 26px; }
+    .card .suit-big { font-size: 56px; }
+    .hand { min-height: 184px; }
+    body.casino-mode .actions .btn { width: 84px; height: 84px; font-size: 13px; }
+    body.casino-mode #btn-deal { width: 124px; height: 124px; }
+    body.casino-mode #btn-deal::after {
+      border-width: 32px 0 32px 52px;
+      margin-left: 8px;
+    }
+  }
+
+  /* ============ HAMBURGER MENU ============ */
+  .hamburger-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(212,175,55,0.15);
+    border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  .hamburger-btn:hover { background: rgba(212,175,55,0.25); }
+  .hamburger-btn span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #d4af37;
+    border-radius: 1px;
+    transition: transform 0.2s;
+  }
+  .hamburger-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+  .hamburger-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  .hamburger-menu {
+    display: none;
+    position: absolute;
+    top: 56px;
+    left: 8px;
+    background: rgba(15,15,15,0.97);
+    border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 10px;
+    padding: 8px;
+    z-index: 150;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 200px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  }
+  .hamburger-menu.show { display: flex; }
+  .hamburger-menu button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.12s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hamburger-menu button svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #d4af37;
+  }
+  .hamburger-menu button:hover { background: rgba(255,255,255,0.08); }
+  .hamburger-menu button.active-mode {
+    background: rgba(81,207,102,0.15);
+    color: #b2f2bb;
+  }
+  .hamburger-menu .menu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 4px 0;
+  }
+
+  /* ============ COLLAPSIBLE STATS ============ */
+  .panel.collapsible h3 {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    padding-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .panel.collapsible h3:hover { color: #ffd700; }
+  .panel.collapsible h3 .toggle-icon {
+    display: inline-block;
+    transition: transform 0.25s;
+    font-size: 11px;
+    color: rgba(212,175,55,0.7);
+  }
+  .panel.collapsible.collapsed h3 {
+    border-bottom-color: transparent;
+    padding-bottom: 0;
+  }
+  .panel.collapsible.collapsed h3 .toggle-icon {
+    transform: rotate(-90deg);
+  }
+  .panel-content {
+    overflow: hidden;
+    max-height: 600px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s;
+    margin-top: 12px;
+  }
+  .panel.collapsible.collapsed .panel-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+  }
+
+  /* ============ MOBILE RESPONSIVENESS ============ */
+  @media (max-width: 768px) {
+    body { padding: 8px; }
+    .app { gap: 10px; }
+
+    /* Keep header as a single row on mobile: hamburger left, title centered absolute, balance right */
+    .header {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+    }
+    .header h1 { font-size: 15px; letter-spacing: 1px; }
+    .header .balance { font-size: 14px; }
+    .header button { font-size: 11px; }
+
+    /* Mobile: fixed height — same before, during, and after the game */
+    .table { padding: 14px 12px; }
+    body.casino-mode .table {
+      height: calc(100vh - 90px);
+      min-height: 520px;
+    }
+    body.casino-mode .actions { margin-bottom: 40px; padding-bottom: 0; }
+    body.casino-mode #next-round-wrap { margin-bottom: 40px; }
+
+    .card {
+      width: 88px;
+      height: 124px;
+      margin-left: -24px;
+      padding: 6px 8px;
+    }
+    .card .rank { font-size: 20px; }
+    .card .suit-small { font-size: 14px; }
+    .card .suit-big { font-size: 40px; }
+    .hand { min-height: 134px; gap: 2px; }
+
+    .actions { gap: 6px; flex-wrap: wrap; }
+    .btn { padding: 9px 14px; font-size: 12px; min-width: 78px; }
+    .kbd-hint { display: none !important; }
+    body.casino-mode .actions .btn .kbd-hint { display: none !important; }
+    /* All casino action buttons same size — including double */
+    body.casino-mode #btn-double { width: 64px !important; height: 64px !important; font-size: 11px !important; }
+
+    .chip { width: 44px; height: 44px; font-size: 12px; border-width: 2px; }
+
+    .feedback { padding: 8px 12px; min-height: 50px; }
+    .feedback-state { font-size: 13px; }
+    .feedback-strategy { font-size: 11px; line-height: 1.45; }
+
+    /* Sidebar panels */
+    .panel { padding: 12px; }
+    .stat-value { font-size: 16px; }
+    .stat-value.small { font-size: 12px; }
+
+    /* Wrong-move modal */
+    .wrong-modal { padding: 22px 18px; }
+    .wrong-modal h2 { font-size: 19px; }
+    .wrong-modal .icon { font-size: 38px; }
+    .wrong-modal .you-chose-act { font-size: 16px; }
+    .wrong-modal .should-act { font-size: 28px; letter-spacing: 2px; }
+    .wrong-modal .explanation { font-size: 13px; padding: 11px 14px; line-height: 1.55; }
+    .wrong-modal button { padding: 10px 24px; font-size: 13px; }
+
+    /* Cards in modal */
+    .wrong-cards-row { gap: 10px; padding: 12px 8px; margin: 8px 0 18px 0; }
+    .wrong-cards-hand { min-height: 76px; }
+    .wrong-cards-hand .card { width: 50px; height: 70px; margin-left: -14px; }
+    .wrong-cards-hand .card .rank { font-size: 12px; }
+    .wrong-cards-hand .card .suit-small { font-size: 9px; }
+    .wrong-cards-hand .card .suit-big { font-size: 22px; }
+    .wrong-vs { font-size: 11px; }
+
+    /* Rules modal */
+    .modal { padding: 20px 16px; }
+    .modal h2 { font-size: 17px; }
+    .modal h3 { font-size: 13px; }
+    .modal p, .modal li { font-size: 12px; line-height: 1.5; }
+  }
+
+  @media (max-width: 480px) {
+    /* Smaller phones */
+    body { padding: 6px; }
+    .header h1 { font-size: 14px; }
+
+    .card {
+      width: 78px;
+      height: 110px;
+      margin-left: -20px;
+      padding: 5px 7px;
+    }
+    .card .rank { font-size: 18px; }
+    .card .suit-small { font-size: 12px; }
+    .card .suit-big { font-size: 34px; }
+    .hand { min-height: 120px; }
+
+    .btn { padding: 8px 10px; font-size: 11px; min-width: 64px; }
+
+    .chip { width: 40px; height: 40px; font-size: 11px; }
+
+    /* Casino mode mobile adjustments */
+    body.casino-mode .casino-bet-display { top: 10px; left: 10px; }
+    body.casino-mode .casino-bet-display .bet-amt { font-size: 15px; margin-bottom: 4px; }
+    body.casino-mode .casino-bet-display .bet-chip {
+      width: 50px; height: 50px; font-size: 10px; border-width: 3px;
+    }
+    body.casino-mode .betting { bottom: 10px; left: 10px; gap: 8px; }
+    body.casino-mode .chips { bottom: 50px; left: 14px; }
+    body.casino-mode .chip {
+      width: 50px; height: 50px; margin-bottom: 4px;
+      font-size: 13px; border-width: 3px;
+    }
+    body.casino-mode .chip-clear { width: 44px; height: 44px; font-size: 9px; margin-bottom: 0; }
+    body.casino-mode #btn-deal {
+      width: 100px; height: 100px;
+      font-size: 0;
+    }
+    body.casino-mode #btn-deal::after {
+      border-width: 26px 0 26px 42px;
+      margin-left: 6px;
+    }
+    body.casino-mode .actions { gap: 10px; padding: 4px 0; margin-bottom: 90px; }
+    body.casino-mode #next-round-wrap { margin-top: 10px; margin-bottom: 110px; }
+    body.casino-mode .actions .btn { width: 64px; height: 64px; font-size: 11px; }
+    body.casino-mode #btn-double { width: 64px; height: 64px; font-size: 11px; }
+    /* No keyboard arrow hints on mobile (no physical keyboard) */
+    body.casino-mode .actions .btn .kbd-hint { display: none !important; }
+
+    /* Wrong-move modal — even tighter */
+    .wrong-modal { padding: 18px 14px; }
+    .wrong-modal .icon { font-size: 32px; }
+    .wrong-modal h2 { font-size: 17px; }
+    .wrong-modal .should-act { font-size: 26px; }
+    .wrong-modal .explanation { font-size: 12px; padding: 10px 12px; }
+    .wrong-cards-hand .card { width: 44px; height: 62px; margin-left: -12px; }
+    .wrong-cards-hand .card .rank { font-size: 11px; }
+    .wrong-cards-hand .card .suit-big { font-size: 18px; }
+  }
+</style>
+</head>
+<body class="casino-mode">
+
+<div class="app">
+
+  <div class="header" style="position:relative;">
+    <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <h1 data-i18n="title">BLACKJACK</h1>
+    <div class="balance-area">
+      <div class="balance"><span id="balance">1000</span></div>
+      <button class="icon-btn-small" onclick="restartGame()" aria-label="Reiniciar" title="Reiniciar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+    </div>
+    <div class="hamburger-menu" id="hamburger-menu">
+      <button onclick="toggleRules(); closeMenu()" id="menu-rules">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span data-i18n="menu_rules">Regras</span>
+      </button>
+      <button onclick="toggleAutoMode(); closeMenu()" id="menu-auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+        <span data-i18n="menu_auto">Robô Auto</span>
+      </button>
+      <button onclick="toggleAutoStartSetting(); closeMenu()" id="menu-autostart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10"/></svg>
+        <span data-i18n="menu_autostart">Auto-iniciar: ON</span>
+      </button>
+      <button onclick="toggleAbout(); closeMenu()" id="menu-about">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="8"/></svg>
+        <span data-i18n="menu_about">Sobre</span>
+      </button>
+      <div class="menu-divider"></div>
+      <button onclick="toggleLanguage()" id="menu-lang">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span data-i18n="menu_lang">Language: PT</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="table">
+    <div class="robot-indicator" id="robot-indicator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/></svg>
+      <span data-i18n="robot_playing">Robô jogando</span>
+    </div>
+
+    <!-- Casino mode visual elements: clicking the bet chip = change bet (abandons hand if mid-round) -->
+    <div class="casino-bet-display empty" id="casino-bet-display" onclick="changeBetClicked()" title="Clique para mudar aposta">
+      <div class="bet-chip" id="casino-bet-chip">Bet</div>
+    </div>
+
+    <!-- Floating stats widget — expandable, anchored bottom-right of table -->
+    <div class="table-stats collapsed" id="stats-panel">
+      <button class="stats-toggle-btn" onclick="toggleStatsPanel()" aria-label="Stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="9" width="4" height="12"/></svg>
+        <span class="stats-summary" id="stats-summary">—</span>
+      </button>
+      <div class="stats-popout">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_hands">Mãos</div>
+            <div class="stat-value" id="stat-hands">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_wins">Vitórias</div>
+            <div class="stat-value" id="stat-wins">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_losses">Derrotas</div>
+            <div class="stat-value" id="stat-losses">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_pushes">Empates</div>
+            <div class="stat-value" id="stat-pushes">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_bj">Blackjacks</div>
+            <div class="stat-value" id="stat-bj">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="stats_strategy">Acerto Estr.</div>
+            <div class="stat-value small" id="stat-strategy">—</div>
+          </div>
+        </div>
+        <button class="btn btn-danger" style="width:100%; margin-top:10px; font-size:11px; padding:6px;" onclick="resetStats()" data-i18n="stats_reset">Zerar Stats</button>
+      </div>
+    </div>
+
+    <!-- House edge note - subtle, on the felt -->
+    <div class="house-edge-note" id="house-edge-note">House edge with perfect strategy: ~0.5%</div>
+
+    <!-- Dealer -->
+    <div class="area">
+      <div class="area-label" data-i18n="dealer">Dealer</div>
+      <div class="hand" id="dealer-hand"></div>
+      <div class="hand-status" id="dealer-status"></div>
+    </div>
+
+    <!-- Feedback bar (two lines: state + strategy verdict) -->
+    <div class="feedback" id="feedback">
+      <div class="feedback-state" id="feedback-state">Faça sua aposta para começar.</div>
+      <div class="feedback-strategy" id="feedback-strategy"></div>
+    </div>
+
+    <!-- Player -->
+    <div class="area">
+      <div class="area-label" data-i18n="you">Você</div>
+      <div class="player-hands" id="player-hands"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions" id="actions">
+      <button class="btn" id="btn-hit" onclick="action('hit')" disabled title="Atalho: ↑"><span data-i18n="btn_hit">Pedir</span> <span class="kbd-hint">↑</span></button>
+      <button class="btn" id="btn-stand" onclick="action('stand')" disabled title="Atalho: ↓"><span data-i18n="btn_stand">Parar</span> <span class="kbd-hint">↓</span></button>
+      <button class="btn" id="btn-double" onclick="action('double')" disabled title="Atalho: ←"><span data-i18n="btn_double">Dobrar</span> <span class="kbd-hint">←</span></button>
+      <button class="btn" id="btn-split" onclick="action('split')" disabled title="Atalho: →"><span data-i18n="btn_split">Dividir</span> <span class="kbd-hint">→</span></button>
+      <button class="btn" id="btn-surrender" onclick="action('surrender')" disabled data-i18n="btn_surrender">Render</button>
+      <button class="btn" id="btn-insurance" onclick="action('insurance')" disabled data-i18n="btn_insurance">Seguro</button>
+      <button class="btn btn-hint" id="btn-hint" onclick="showHint()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 13c.5.5 1 1.2 1 2v1h6v-1c0-.8.5-1.5 1-2a7 7 0 0 0-4-13z"/></svg>
+        <span data-i18n="btn_hint">Dica</span>
+      </button>
+    </div>
+
+    <!-- Betting -->
+    <div class="betting" id="betting">
+      <div class="current-bet"><span data-i18n="bet_label">Aposta:</span> <span id="current-bet">0</span></div>
+      <div class="chips">
+        <button class="chip chip-10" onclick="addChip(10)">10</button>
+        <button class="chip chip-25" onclick="addChip(25)">25</button>
+        <button class="chip chip-50" onclick="addChip(50)">50</button>
+        <button class="chip chip-100" onclick="addChip(100)">100</button>
+        <button class="chip chip-clear" onclick="clearBet()" data-i18n="btn_clear">Limpar</button>
+      </div>
+      <button class="btn btn-primary" id="btn-deal" onclick="deal()" disabled data-i18n="btn_deal">Distribuir</button>
+    </div>
+
+    <!-- End-of-round control: replay with same bet (centered, same vertical slot as actions) -->
+    <div id="next-round-wrap" style="display:none; text-align:center;">
+      <button class="btn btn-primary" onclick="playNextRound()" data-i18n="btn_play_again">Jogar novamente</button>
+    </div>
+
+    <div class="game-message" id="game-message"></div>
+
+  </div>
+
+
+</div>
+
+<!-- About modal -->
+<div class="modal-overlay" id="about-modal" onclick="if(event.target===this) toggleAbout()">
+  <div class="modal">
+    <button class="modal-close-x" onclick="toggleAbout()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="about-pt">
+      <h2>Sobre este projeto</h2>
+      <p style="color:#d4af37; font-style:italic; margin-bottom:14px;">Built in Cape Town · Made by Ravel Medeiros</p>
+      <h3>Como tudo começou</h3>
+      <p>Eu e meus amigos <strong>Bruno Moraes</strong> e <strong>Raul Melo</strong> fomos pra um cassino aqui em Cape Town achando que ia ser fácil. <strong>Perdemos.</strong> Confiamos no instinto, jogamos no feeling, e a casa fez o que a casa sempre faz — pegou o nosso dinheiro com a vantagem matemática dela.</p>
+      <p>Voltei pra casa e tive a ideia: e se a gente tivesse onde <strong>treinar antes de voltar</strong>? Não pra "ganhar do cassino" (isso é mito), mas pra reduzir a vantagem da casa pra ~0,5% jogando estratégia básica perfeita — em vez dos 2-5% que pagamos pelos erros da primeira ida.</p>
+      <h3>O que esse simulador faz</h3>
+      <p>Treina memória muscular: identificar instantaneamente <em>16 vs 10</em>, <em>11 vs qualquer carta</em>, <em>par de 8s</em>, <em>soft 18 vs 9</em>. Quando você erra, o jogo congela, mostra a mão, e explica matematicamente o que era certo. Cada erro vira uma aula.</p>
+      <h3>Como usar bem</h3>
+      <p>Liga o robô por umas 30 mãos pra observar as decisões dele. Depois pausa e tenta replicar — de olho na <strong>% de Acerto Estr.</strong> Quando você ficar consistente acima de 95%, está pronto pra voltar à mesa de verdade — dessa vez não como otário.</p>
+      <p style="margin-top:18px; font-size:13px; color:#ffd700; text-align:center;">
+        Abraço, <strong>Bruno</strong> e <strong>Raul</strong> — vamos voltar lá. 🃏
+      </p>
+      <p style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:18px; text-align:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        Cape Town, 2026 · feito com Venvanse e Monster Zero Açúcar do branco
+      </p>
+    </div>
+    <div id="about-es" style="display:none;">
+      <h2>Acerca de este proyecto</h2>
+      <p style="color:#d4af37; font-style:italic; margin-bottom:14px;">Built in Cape Town · Made by Ravel Medeiros</p>
+      <h3>Cómo empezó todo</h3>
+      <p>Mis amigos <strong>Bruno Moraes</strong>, <strong>Raul Melo</strong> y yo fuimos a un casino aquí en Cape Town pensando que sería fácil. <strong>Perdimos.</strong> Confiamos en el instinto, jugamos con corazonadas, y la casa hizo lo que la casa siempre hace — se llevó nuestro dinero con su ventaja matemática.</p>
+      <p>Volví a casa y tuve la idea: ¿y si tuviéramos un lugar para <strong>practicar antes de volver</strong>? No para "ganarle al casino" (eso es un mito), sino para reducir la ventaja de la casa al ~0,5% jugando estrategia básica perfecta — en lugar del 2-5% que pagamos por nuestros errores la primera vez.</p>
+      <h3>Qué hace este simulador</h3>
+      <p>Entrena memoria muscular: reconocer al instante <em>16 vs 10</em>, <em>11 vs cualquier carta</em>, <em>par de 8s</em>, <em>soft 18 vs 9</em>. Cuando fallas, el juego se congela, muestra tu mano y explica matemáticamente cuál era la jugada correcta. Cada error es una lección.</p>
+      <h3>Cómo usarlo bien</h3>
+      <p>Deja al robot jugar ~30 manos para observar sus decisiones. Después pausa e intenta replicar — atento al <strong>% de Estrategia</strong>. Cuando te mantengas arriba del 95% de forma consistente, estás listo para volver a una mesa real — esta vez no como bobo.</p>
+      <p style="margin-top:18px; font-size:13px; color:#ffd700; text-align:center;">
+        Un abrazo, <strong>Bruno</strong> y <strong>Raul</strong> — vamos a volver. 🃏
+      </p>
+      <p style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:18px; text-align:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        Cape Town, 2026 · hecho con Vyvanse y Monster Zero Sugar lata blanca
+      </p>
+    </div>
+
+    <div id="about-tr" style="display:none;">
+      <h2>Bu proje hakkında</h2>
+      <p style="color:#d4af37; font-style:italic; margin-bottom:14px;">Built in Cape Town · Made by Ravel Medeiros</p>
+      <h3>Nasıl başladı</h3>
+      <p>Arkadaşlarım <strong>Bruno Moraes</strong>, <strong>Raul Melo</strong> ve ben, burada Cape Town'da bir kumarhaneye gittik, kolay olur sandık. <strong>Kaybettik.</strong> İçgüdüye güvendik, his ile oynadık, ve kasa her zaman yaptığını yaptı — matematiksel avantajıyla paramızı aldı.</p>
+      <p>Eve döndüm ve fikir geldi: ya geri dönmeden önce <strong>antrenman yapacağımız bir yerimiz olsa</strong>? "Kasayı yenmek" için değil (bu bir efsane), mükemmel temel strateji oynayarak ev avantajını ~%0.5'e indirmek için — ilk gidişte hatalarımız yüzünden ödediğimiz %2-5 yerine.</p>
+      <h3>Bu simülatör ne yapar</h3>
+      <p>Kas hafızasını eğitir: anında <em>16 vs 10</em>, <em>11 vs herhangi bir kart</em>, <em>8 çifti</em>, <em>soft 18 vs 9</em> tanı. Hata yaptığında oyun donar, eli gösterir ve doğru hamlenin matematiksel olarak ne olduğunu açıklar. Her hata bir derstir.</p>
+      <h3>Nasıl iyi kullanılır</h3>
+      <p>Kararlarını izlemek için robotu ~30 el çalıştır. Sonra duraklat ve tekrar etmeye çalış — <strong>Strateji %</strong>'sine göz at. Tutarlı şekilde %95'in üstünde kalırken, gerçek bir masaya geri dönmeye hazırsın — bu sefer enayi olarak değil.</p>
+      <p style="margin-top:18px; font-size:13px; color:#ffd700; text-align:center;">
+        Selamlar <strong>Bruno</strong> ve <strong>Raul</strong> — geri dönüyoruz. 🃏
+      </p>
+      <p style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:18px; text-align:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        Cape Town, 2026 · Vyvanse ve beyaz kutu Monster Zero Sugar ile yapıldı
+      </p>
+    </div>
+
+    <div id="about-en" style="display:none;">
+      <h2>About this project</h2>
+      <p style="color:#d4af37; font-style:italic; margin-bottom:14px;">Built in Cape Town · Made by Ravel Medeiros</p>
+      <h3>How it started</h3>
+      <p>My friends <strong>Bruno Moraes</strong>, <strong>Raul Melo</strong> and I went to a casino here in Cape Town thinking it would be easy. <strong>We lost.</strong> Trusted our gut, played on feeling, and the house did what the house always does — took our money with its mathematical edge.</p>
+      <p>I went home and had the idea: what if we had a place to <strong>practice before going back</strong>? Not to "beat the casino" (that's a myth), but to bring the house edge down to ~0.5% by playing perfect basic strategy — instead of the 2-5% we paid for our mistakes on round one.</p>
+      <h3>What this simulator does</h3>
+      <p>It trains muscle memory: instantly recognize <em>16 vs 10</em>, <em>11 vs any card</em>, <em>pair of 8s</em>, <em>soft 18 vs 9</em>. When you miss, the game freezes, shows your hand, and explains mathematically what was right. Every mistake becomes a lesson.</p>
+      <h3>How to use it well</h3>
+      <p>Run the robot for ~30 hands to watch its decisions. Then pause and try to replicate — keep an eye on <strong>Strategy %</strong>. Once you stay above 95% consistently, you're ready to come back to a real table — this time not as the sucker.</p>
+      <p style="margin-top:18px; font-size:13px; color:#ffd700; text-align:center;">
+        Cheers <strong>Bruno</strong> and <strong>Raul</strong> — we're going back. 🃏
+      </p>
+      <p style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:18px; text-align:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        Cape Town, 2026 · made with Vyvanse and white-can Monster Zero Sugar
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Wrong-move teaching modal -->
+<div class="wrong-overlay" id="wrong-overlay">
+  <div class="wrong-modal">
+    <div class="icon">✗</div>
+    <h2 data-i18n="wrong_title">JOGADA ERRADA</h2>
+
+    <!-- Cards at the moment of decision -->
+    <div class="wrong-cards-row">
+      <div class="wrong-cards-side">
+        <div class="wrong-cards-label" data-i18n="wrong_your_cards">Suas cartas</div>
+        <div class="wrong-cards-hand" id="wrong-player-cards"></div>
+      </div>
+      <div class="wrong-vs" data-i18n="wrong_vs">vs</div>
+      <div class="wrong-cards-side">
+        <div class="wrong-cards-label" data-i18n="wrong_dealer">Dealer</div>
+        <div class="wrong-cards-hand" id="wrong-dealer-card"></div>
+      </div>
+    </div>
+
+    <div class="you-chose" data-i18n="wrong_you_chose">Você escolheu</div>
+    <div class="you-chose-act" id="wrong-you-chose">PEDIR</div>
+    <div class="arrow">↓</div>
+    <div class="should-label" data-i18n="wrong_should">A jogada correta era</div>
+    <div class="should-act" id="wrong-should">PARAR</div>
+    <div class="explanation" id="wrong-explanation">Explicação aqui</div>
+    <button onclick="dismissWrongMove()" data-i18n="wrong_continue">Continuar</button>
+  </div>
+</div>
+
+<!-- Floating toast (used in casino mode) -->
+<div class="toast" id="toast">
+  <div class="toast-state" id="toast-state"></div>
+  <div class="toast-strategy" id="toast-strategy"></div>
+</div>
+
+<!-- Rules Modal -->
+<div class="modal-overlay" id="rules-modal" onclick="if(event.target===this) toggleRules()">
+  <div class="modal">
+    <button class="modal-close-x" onclick="toggleRules()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="rules-pt">
+      <h2>Regras do Blackjack</h2>
+      <h3>Objetivo</h3>
+      <p>Vencer o dealer chegando o mais próximo possível de 21 sem ultrapassar (estourar / "bust").</p>
+      <h3>Valor das Cartas</h3>
+      <ul>
+        <li><strong>2-10:</strong> valor da face</li>
+        <li><strong>Valete, Dama, Rei (J, Q, K):</strong> valem 10</li>
+        <li><strong>Ás (A):</strong> vale 1 ou 11 (escolhido para favorecer a mão)</li>
+      </ul>
+      <h3>Como Funciona</h3>
+      <ul>
+        <li>Você e o dealer recebem 2 cartas. Uma das cartas do dealer fica oculta.</li>
+        <li>Você decide as ações até "parar" ou "estourar".</li>
+        <li>Depois o dealer revela e joga até atingir 17+ (pede em soft 17).</li>
+        <li>Quem chegar mais perto de 21 sem estourar, ganha.</li>
+      </ul>
+      <h3>Ações</h3>
+      <ul>
+        <li><kbd>Pedir</kbd> (Hit): receber mais uma carta</li>
+        <li><kbd>Parar</kbd> (Stand): manter a mão atual</li>
+        <li><kbd>Dobrar</kbd> (Double): dobrar a aposta e receber só mais 1 carta</li>
+        <li><kbd>Dividir</kbd> (Split): com par, separa em duas mãos (dobra a aposta)</li>
+        <li><kbd>Render</kbd> (Surrender): desiste e perde só metade da aposta</li>
+        <li><kbd>Seguro</kbd> (Insurance): só quando dealer mostra Ás. Aposta lateral (½ aposta) que paga 2:1 se ele tiver Blackjack</li>
+      </ul>
+      <h3>Pagamentos</h3>
+      <ul>
+        <li><strong>Vitória normal:</strong> 1:1 (recebe o dobro da aposta)</li>
+        <li><strong>Blackjack natural</strong> (A + 10 nas 2 primeiras cartas): 3:2</li>
+        <li><strong>Empate (push):</strong> aposta devolvida</li>
+        <li><strong>Derrota:</strong> perde a aposta</li>
+      </ul>
+      <h3>Termos Importantes</h3>
+      <ul>
+        <li><strong>Hard hand:</strong> mão sem Ás, ou com Ás valendo 1</li>
+        <li><strong>Soft hand:</strong> mão com Ás valendo 11 (não pode estourar com mais 1 carta)</li>
+        <li><strong>Bust:</strong> ultrapassar 21 (derrota imediata)</li>
+        <li><strong>Push:</strong> empate com o dealer</li>
+      </ul>
+    </div>
+
+    <div id="rules-es" style="display:none;">
+      <h2>Reglas del Blackjack</h2>
+      <h3>Objetivo</h3>
+      <p>Vencer al dealer llegando lo más cerca posible de 21 sin pasarse (bust).</p>
+      <h3>Valor de las Cartas</h3>
+      <ul>
+        <li><strong>2-10:</strong> valor nominal</li>
+        <li><strong>Jota, Reina, Rey (J, Q, K):</strong> valen 10</li>
+        <li><strong>As (A):</strong> vale 1 u 11 (se elige según convenga)</li>
+      </ul>
+      <h3>Cómo Funciona</h3>
+      <ul>
+        <li>Tú y el dealer reciben 2 cartas. Una del dealer queda oculta.</li>
+        <li>Decides hasta plantarte o pasarte.</li>
+        <li>Luego el dealer revela y juega hasta 17+ (pide en soft 17).</li>
+        <li>Quien se acerque más a 21 sin pasarse, gana.</li>
+      </ul>
+      <h3>Acciones</h3>
+      <ul>
+        <li><kbd>Pedir</kbd> (Hit): tomar una carta más</li>
+        <li><kbd>Plantarse</kbd> (Stand): mantener la mano</li>
+        <li><kbd>Doblar</kbd> (Double): doblar la apuesta y recibir solo 1 carta</li>
+        <li><kbd>Dividir</kbd> (Split): con un par, separar en dos manos</li>
+        <li><kbd>Rendirse</kbd> (Surrender): abandonar perdiendo solo la mitad</li>
+        <li><kbd>Seguro</kbd> (Insurance): solo cuando dealer muestra As. Apuesta lateral (½) que paga 2:1 si dealer tiene Blackjack</li>
+      </ul>
+      <h3>Pagos</h3>
+      <ul>
+        <li><strong>Victoria normal:</strong> 1:1</li>
+        <li><strong>Blackjack natural</strong> (A + 10 en las primeras 2): 3:2</li>
+        <li><strong>Empate (push):</strong> apuesta devuelta</li>
+        <li><strong>Derrota:</strong> pierdes la apuesta</li>
+      </ul>
+      <h3>Términos</h3>
+      <ul>
+        <li><strong>Hard hand:</strong> mano sin As, o con As valiendo 1</li>
+        <li><strong>Soft hand:</strong> mano con As valiendo 11</li>
+        <li><strong>Bust:</strong> pasar de 21 (derrota inmediata)</li>
+        <li><strong>Push:</strong> empate</li>
+      </ul>
+    </div>
+
+    <div id="rules-tr" style="display:none;">
+      <h2>Blackjack Kuralları</h2>
+      <h3>Amaç</h3>
+      <p>Kurpiyeri yenmek için 21'i geçmeden mümkün olduğunca yaklaş ("yanmadan" / bust).</p>
+      <h3>Kart Değerleri</h3>
+      <ul>
+        <li><strong>2-10:</strong> üzerindeki değer</li>
+        <li><strong>Vale, Kız, Papaz (J, Q, K):</strong> 10 değerinde</li>
+        <li><strong>As (A):</strong> 1 veya 11 (ele uygun olan)</li>
+      </ul>
+      <h3>Nasıl Çalışır</h3>
+      <ul>
+        <li>Sen ve kurpiyer 2 kart alırsınız. Kurpiyerin bir kartı kapalı.</li>
+        <li>Durana veya yanana kadar karar verirsin.</li>
+        <li>Sonra kurpiyer kapalı kartı açar ve 17+'a kadar kart çeker (soft 17'de çeker).</li>
+        <li>21'i geçmeden daha yakın olan kazanır.</li>
+      </ul>
+      <h3>Hareketler</h3>
+      <ul>
+        <li><kbd>Kart Çek</kbd> (Hit): bir kart daha al</li>
+        <li><kbd>Dur</kbd> (Stand): mevcut eli koru</li>
+        <li><kbd>İkile</kbd> (Double): bahsi ikiye katla, sadece 1 kart al</li>
+        <li><kbd>Böl</kbd> (Split): çift varsa iki ele ayır</li>
+        <li><kbd>Teslim Ol</kbd> (Surrender): pes et, sadece bahsin yarısını kaybet</li>
+        <li><kbd>Sigorta</kbd> (Insurance): sadece kurpiyer As gösterdiğinde. Yan bahis (½), kurpiyerde Blackjack varsa 2:1 öder</li>
+      </ul>
+      <h3>Ödemeler</h3>
+      <ul>
+        <li><strong>Normal kazanç:</strong> 1:1</li>
+        <li><strong>Doğal Blackjack</strong> (ilk 2 kartta A + 10): 3:2</li>
+        <li><strong>Beraberlik (push):</strong> bahis iade</li>
+        <li><strong>Kayıp:</strong> bahsi kaybet</li>
+      </ul>
+      <h3>Önemli Terimler</h3>
+      <ul>
+        <li><strong>Hard hand:</strong> As olmayan veya As'ı 1 sayan el</li>
+        <li><strong>Soft hand:</strong> As'ı 11 sayan el (bir kart daha ile yanamaz)</li>
+        <li><strong>Bust:</strong> 21'i geçmek (anlık kayıp)</li>
+        <li><strong>Push:</strong> kurpiyerle berabere</li>
+      </ul>
+    </div>
+
+    <div id="rules-en" style="display:none;">
+      <h2>Blackjack Rules</h2>
+      <h3>Objective</h3>
+      <p>Beat the dealer by getting as close to 21 as possible without going over (busting).</p>
+      <h3>Card Values</h3>
+      <ul>
+        <li><strong>2-10:</strong> face value</li>
+        <li><strong>Jack, Queen, King (J, Q, K):</strong> worth 10</li>
+        <li><strong>Ace (A):</strong> worth 1 or 11 (whichever helps your hand)</li>
+      </ul>
+      <h3>How It Works</h3>
+      <ul>
+        <li>You and the dealer get 2 cards. One of the dealer's cards stays hidden.</li>
+        <li>You make decisions until you stand or bust.</li>
+        <li>Then the dealer reveals and plays until reaching 17+ (hits soft 17).</li>
+        <li>Whoever gets closer to 21 without busting, wins.</li>
+      </ul>
+      <h3>Actions</h3>
+      <ul>
+        <li><kbd>Hit</kbd>: take one more card</li>
+        <li><kbd>Stand</kbd>: keep current hand</li>
+        <li><kbd>Double</kbd>: double the bet and take exactly 1 more card</li>
+        <li><kbd>Split</kbd>: with a pair, separate into two hands (doubles the bet)</li>
+        <li><kbd>Surrender</kbd>: give up and lose only half the bet</li>
+        <li><kbd>Insurance</kbd>: only when dealer shows Ace. Side bet (½ bet) paying 2:1 if dealer has Blackjack</li>
+      </ul>
+      <h3>Payouts</h3>
+      <ul>
+        <li><strong>Normal win:</strong> 1:1 (you get double your bet back)</li>
+        <li><strong>Natural Blackjack</strong> (A + 10 on first two cards): 3:2</li>
+        <li><strong>Push (tie):</strong> bet returned</li>
+        <li><strong>Loss:</strong> lose the bet</li>
+      </ul>
+      <h3>Key Terms</h3>
+      <ul>
+        <li><strong>Hard hand:</strong> hand without Ace, or with Ace counting as 1</li>
+        <li><strong>Soft hand:</strong> hand with Ace counting as 11 (can't bust with one more card)</li>
+        <li><strong>Bust:</strong> going over 21 (immediate loss)</li>
+        <li><strong>Push:</strong> tie with the dealer</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ==================== CARDS & DECK ====================
+const SUITS = [
+  { sym: '♠', name: 'Espadas', color: 'black' },
+  { sym: '♥', name: 'Copas', color: 'red' },
+  { sym: '♦', name: 'Ouros', color: 'red' },
+  { sym: '♣', name: 'Paus', color: 'black' }
+];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+function makeShoe(numDecks = 6) {
+  const shoe = [];
+  for (let d = 0; d < numDecks; d++) {
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        shoe.push({ rank, suit: suit.sym, color: suit.color });
+      }
+    }
+  }
+  // Fisher-Yates shuffle
+  for (let i = shoe.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shoe[i], shoe[j]] = [shoe[j], shoe[i]];
+  }
+  return shoe;
+}
+
+function cardValue(card) {
+  if (card.rank === 'A') return 11;
+  if (['J','Q','K'].includes(card.rank)) return 10;
+  return parseInt(card.rank);
+}
+
+function handTotal(cards) {
+  let total = 0;
+  let aces = 0;
+  for (const c of cards) {
+    total += cardValue(c);
+    if (c.rank === 'A') aces++;
+  }
+  // Convert aces from 11 to 1 if busting
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+  return total;
+}
+
+function isSoft(cards) {
+  // soft = has at least one Ace counted as 11
+  let total = 0;
+  let aces = 0;
+  for (const c of cards) {
+    total += cardValue(c);
+    if (c.rank === 'A') aces++;
+  }
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+  return aces > 0; // remaining aces still counted as 11
+}
+
+function isBlackjack(cards) {
+  return cards.length === 2 && handTotal(cards) === 21;
+}
+
+function isPair(cards) {
+  return cards.length === 2 && cardValue(cards[0]) === cardValue(cards[1]);
+}
+
+// ==================== BASIC STRATEGY ====================
+// dealerUp: 2-10 or 'A' (numeric value, A=11)
+// Returns: 'H' (hit), 'S' (stand), 'D' (double if allowed else hit),
+//          'Ds' (double if allowed else stand), 'P' (split),
+//          'R' (surrender if allowed else hit), 'Rs' (surrender if allowed else stand)
+
+function basicStrategy(playerCards, dealerCard, canDouble, canSplit, canSurrender) {
+  const dv = cardValue(dealerCard); // 2-11
+  const total = handTotal(playerCards);
+  const soft = isSoft(playerCards);
+  const pair = isPair(playerCards);
+
+  // Pair logic (only on initial 2 cards)
+  if (pair && canSplit) {
+    const pairVal = cardValue(playerCards[0]);
+    const split = pairAction(pairVal, dv);
+    if (split === 'P') return resolveAction('P', canDouble, canSplit, canSurrender);
+  }
+
+  // Soft totals
+  if (soft) {
+    return resolveAction(softAction(total, dv), canDouble, canSplit, canSurrender);
+  }
+
+  // Hard totals
+  return resolveAction(hardAction(total, dv), canDouble, canSplit, canSurrender);
+}
+
+function pairAction(pairVal, dv) {
+  // pairVal is value of one card (A=11, 10/J/Q/K = 10)
+  if (pairVal === 11) return 'P';            // A,A always split
+  if (pairVal === 10) return 'S';            // 10,10 never split
+  if (pairVal === 9) {
+    if ([7,10,11].includes(dv)) return 'S';
+    return 'P';
+  }
+  if (pairVal === 8) return 'P';             // 8,8 always split
+  if (pairVal === 7) return dv <= 7 ? 'P' : 'H';
+  if (pairVal === 6) return dv <= 6 ? 'P' : 'H';
+  if (pairVal === 5) return (dv >= 2 && dv <= 9) ? 'D' : 'H'; // treat as 10
+  if (pairVal === 4) return (dv === 5 || dv === 6) ? 'P' : 'H';
+  if (pairVal === 3) return dv <= 7 ? 'P' : 'H';
+  if (pairVal === 2) return dv <= 7 ? 'P' : 'H';
+  return 'H';
+}
+
+function softAction(total, dv) {
+  // total is hand total with one ace as 11
+  if (total >= 20) return 'S';        // A,9 (20)
+  if (total === 19) {
+    if (dv === 6) return 'Ds';        // double if allowed (H17 rule), else stand
+    return 'S';
+  }
+  if (total === 18) {                 // A,7
+    if (dv >= 3 && dv <= 6) return 'Ds';
+    if (dv === 2 || dv === 7 || dv === 8) return 'S';
+    return 'H';                       // 9, 10, A
+  }
+  if (total === 17) {                 // A,6
+    if (dv >= 3 && dv <= 6) return 'D';
+    return 'H';
+  }
+  if (total === 16 || total === 15) { // A,5 / A,4
+    if (dv >= 4 && dv <= 6) return 'D';
+    return 'H';
+  }
+  if (total === 14 || total === 13) { // A,3 / A,2
+    if (dv === 5 || dv === 6) return 'D';
+    return 'H';
+  }
+  return 'H';
+}
+
+function hardAction(total, dv) {
+  if (total >= 17) {
+    if (total === 17 && dv === 11) return 'Rs'; // H17: surrender 17 vs A
+    return 'S';
+  }
+  if (total === 16) {
+    if (dv >= 9) return 'R';   // surrender vs 9, 10, A
+    if (dv >= 7) return 'H';
+    return 'S';                // 2-6
+  }
+  if (total === 15) {
+    if (dv === 10 || dv === 11) return 'R';
+    if (dv >= 7) return 'H';
+    return 'S';
+  }
+  if (total >= 13 && total <= 14) {
+    return dv >= 7 ? 'H' : 'S';
+  }
+  if (total === 12) {
+    return (dv >= 4 && dv <= 6) ? 'S' : 'H';
+  }
+  if (total === 11) return 'D';
+  if (total === 10) return (dv <= 9) ? 'D' : 'H';
+  if (total === 9) return (dv >= 3 && dv <= 6) ? 'D' : 'H';
+  return 'H'; // 8 or less
+}
+
+function resolveAction(code, canDouble, canSplit, canSurrender) {
+  if (code === 'P' && canSplit) return 'split';
+  if (code === 'P' && !canSplit) return 'hit';
+  if (code === 'D' && canDouble) return 'double';
+  if (code === 'D' && !canDouble) return 'hit';
+  if (code === 'Ds' && canDouble) return 'double';
+  if (code === 'Ds' && !canDouble) return 'stand';
+  if (code === 'R' && canSurrender) return 'surrender';
+  if (code === 'R' && !canSurrender) return 'hit';
+  if (code === 'Rs' && canSurrender) return 'surrender';
+  if (code === 'Rs' && !canSurrender) return 'stand';
+  if (code === 'H') return 'hit';
+  if (code === 'S') return 'stand';
+  return 'stand';
+}
+
+function actionLabel(act) {
+  const keys = {
+    hit: 'lbl_hit', stand: 'lbl_stand', double: 'lbl_double',
+    split: 'lbl_split', surrender: 'lbl_surrender'
+  };
+  return keys[act] ? t(keys[act]) : act.toUpperCase();
+}
+
+function actionExplanation(act, playerCards, dealerCard) {
+  if (currentLang === 'en') return actionExplanationEN(act, playerCards, dealerCard);
+  if (currentLang === 'es') return actionExplanationES(act, playerCards, dealerCard);
+  if (currentLang === 'tr') return actionExplanationTR(act, playerCards, dealerCard);
+  return actionExplanationPT(act, playerCards, dealerCard);
+}
+
+function actionExplanationTR(act, playerCards, dealerCard) {
+  const total = handTotal(playerCards);
+  const soft = isSoft(playerCards);
+  const pair = isPair(playerCards);
+  const dv = cardValue(dealerCard);
+  const dealerStr = dealerCard.rank === 'A' ? 'As' : dealerCard.rank;
+
+  if (act === 'hit') {
+    if (soft && total <= 17) {
+      return `Soft ${total} (As=11): bir kart daha ÇEKMEK seni YAKAMAZ — 21'i geçersen As otomatik olarak 1 olur. "Bedava kart": sadece iyileştirebilir.`;
+    }
+    if (total <= 11) {
+      return `${total} ile yanmak imkansız (her kart ≤21'de kalır). Her zaman çek — sadece üst yön, sıfır risk.`;
+    }
+    if (dv >= 7) {
+      return `Senin elinde ${total} (zayıf). Kurpiyer ${dealerStr} gösteriyor — yaklaşık %75 olasılıkla 17-21 arası kapatır. ${total} ile durmak neredeyse kesin kayıp. Yanma riskini almak garanti kayıptan daha iyidir.`;
+    }
+    return `${total} ile durmak çok zayıf — zayıf kurpiyere karşı bile kart çekmek daha iyi beklenti.`;
+  }
+  if (act === 'stand') {
+    if (total >= 17) {
+      const bustCard = 22 - total;
+      return `${total} güçlü el. Kart çekmek ${bustCard} veya üstü ile yanar — küçük kazanç için fazla risk. Dur.`;
+    }
+    if (dv <= 6) {
+      const bustPct = (dv === 5 || dv === 6) ? '~%42' : (dv === 4 ? '~%40' : '~%35');
+      return `Kurpiyer ${dealerStr} gösteriyor (zayıf kart). Kurallar gereği kurpiyer 17+ olana kadar kart çekmek ZORUNDA. ${dealerStr} ile ${bustPct} ihtimalle yanar. ${total} ile dur ve kendini astırsın — kart çekmek seni önce yandırma riskine sokar.`;
+    }
+    if (soft && total >= 18) {
+      return `Soft ${total} (As+${total-11}) zaten iyi el. Kart çekmek seni daha kötü bir hard totale düşürebilir — örn: soft 18 + 5 = hard 13. Dur.`;
+    }
+    return `${total} ${dealerStr}'a karşı, durmak strateji tablosunda en yüksek beklenen kazanca sahip.`;
+  }
+  if (act === 'double') {
+    if (total === 11) {
+      return `11, ikileme için en iyi el. Destenin ~%31'i resimli kart veya 10 (sana 21 verir). Küçük kartlar bile genelde 17+ kapatır. İkilemek = neredeyse kesin kazançta çift bahis.`;
+    }
+    if (total === 10) {
+      return `10 ile, sonraki kartın %31 ihtimalle resim/10 olması (sana 20 verir — neredeyse yenilmez). Kurpiyer ${dealerStr} gösteriyor — net üstünlük. İkile, 2 kat kazan.`;
+    }
+    if (total === 9) {
+      return `9 ${dealerStr}'a karşı (zayıf kurpiyer): çoğu zaman 17-21 kapatırsın VE kurpiyer genelde yanar. İkile, bu çift avantajı kullan.`;
+    }
+    if (soft) {
+      return `Soft ${total} ${dealerStr}'a karşı (zayıf kurpiyer). Çift avantaj: yanamazsın (esnek As) VE kurpiyer büyük ihtimalle hata yapar. İkilemek değeri maksimize eder.`;
+    }
+    return `Elin ${dealerStr}'a karşı yüksek pozitif beklentiye sahip. İkilemek bu kazancı çoğaltır — aynı olasılık, çift bahis.`;
+  }
+  if (act === 'split') {
+    const pairVal = pair ? cardValue(playerCards[0]) : 0;
+    if (pairVal === 11) {
+      return `AS çifti = HER ZAMAN böl. Bölmezsen A+A sadece 12 (kötü el). Bölünce 11'den başlayan iki el — her birinin sonraki kart ile 21 yapma şansı ~%31. Blackjack'in en kârlı oyunu.`;
+    }
+    if (pairVal === 8) {
+      return `8 çifti = 16 (EN KÖTÜ el). Bölmek seni 8'den başlayan iki ele götürür — hâlâ zayıf, ama 18-19 kapatma ihtimali çok daha iyi. Olası kayıp yerine iki hafif şans.`;
+    }
+    if (pairVal === 10) {
+      return `10 çifti = 20 (neredeyse yenilmez). Bölmek neredeyse kesin galibiyeti çöpe atmak demek. ASLA 10 bölme.`;
+    }
+    if (pairVal === 9) {
+      return `9 çifti = 18, ${dealerStr}'a karşı. 9'dan başlayan iki el bu kurpiyer kartına karşı daha yüksek EV.`;
+    }
+    if (pairVal === 5) {
+      return `5 çifti = 10. Bölme — 10 olarak işle ve ikile. 5'ten başlayan iki el çöple oynamak demek.`;
+    }
+    if ([2,3,6,7].includes(pairVal)) {
+      return `${pairVal} çifti ${dealerStr}'a karşı (zayıf kurpiyer). Birlikte tutulursa elin (${pairVal*2}) zayıf. Bölünce her yarı yeni el ve kurpiyerin yanma olasılığını kullanırsın.`;
+    }
+    return `Bu çifti ${dealerStr}'a karşı bölmek tek el olarak oynamaktan daha yüksek EV.`;
+  }
+  if (act === 'surrender') {
+    if (total === 16 && (dv === 9 || dv === 10 || dv === 11)) {
+      return `16 ${dealerStr}'a karşı matematiksel kayıp: mükemmel oynasan bile %50'den FAZLA kaybedersin. Teslim olmak bahsin YARISINI iade eder — daha çok harcayan bir el oynamaktansa garantili %50 kayıp daha iyi. "En az kötü" hamle.`;
+    }
+    if (total === 15 && (dv === 10 || dv === 11)) {
+      return `15 ${dealerStr}'a karşı — kazanma şansın sadece ~%25. Teslim olmak bahsin yarısını kurtarır.`;
+    }
+    if (total === 17 && dv === 11) {
+      return `17 As'a karşı (H17 kuralı): 17 olsa bile kurpiyer As ile çoğu zaman 18-21 kapatır. Teslim olmak ~%58 yerine %50 kaybetmek demek.`;
+    }
+    return `Bu kombinasyonun ${dealerStr}'a karşı çok negatif beklentisi var. Teslim olmak bahsin yarısını kaybeder — büyük olasılıkla hepsini kaybetmektense.`;
+  }
+  return '';
+}
+
+function actionExplanationES(act, playerCards, dealerCard) {
+  const total = handTotal(playerCards);
+  const soft = isSoft(playerCards);
+  const pair = isPair(playerCards);
+  const dv = cardValue(dealerCard);
+  const dealerStr = dealerCard.rank === 'A' ? 'As' : dealerCard.rank;
+
+  if (act === 'hit') {
+    if (soft && total <= 17) {
+      return `Mano soft ${total} (con As valiendo 11): pedir otra carta NO PUEDE pasarte — si superas 21, el As pasa a valer 1 automáticamente. Es una "carta gratis": solo puede mejorar.`;
+    }
+    if (total <= 11) {
+      return `Con ${total} es imposible pasarse (cualquier carta queda ≤21). Siempre vale pedir — solo upside, cero riesgo.`;
+    }
+    if (dv >= 7) {
+      return `Tienes ${total} (mano débil). El dealer muestra ${dealerStr} — terminará en 17-21 cerca del 75% de las veces. Plantarte con ${total} pierde casi seguro. Pedir y arriesgar pasarse es mejor que perder garantizado.`;
+    }
+    return `Con ${total}, plantarte es muy débil — incluso contra dealer débil, pedir tiene mayor expectativa.`;
+  }
+  if (act === 'stand') {
+    if (total >= 17) {
+      const bustCard = 22 - total;
+      return `Con ${total} ya estás fuerte. Pedir te pasaría con cualquier ${bustCard} o mayor — riesgo demasiado alto. Plántate.`;
+    }
+    if (dv <= 6) {
+      const bustPct = (dv === 5 || dv === 6) ? '~42%' : (dv === 4 ? '~40%' : '~35%');
+      return `Dealer muestra ${dealerStr} (carta débil). Por regla, el dealer DEBE pedir hasta llegar a 17+. Con ${dealerStr}, se pasa ${bustPct} de las veces. Plántate con ${total} y deja que él se cuelgue solo — pedir solo te pone en riesgo de pasarte tú primero.`;
+    }
+    if (soft && total >= 18) {
+      return `Soft ${total} (As+${total-11}) ya es buena mano. Pedir puede dejarte en un total hard peor — ej: soft 18 + 5 = hard 13. Plántate.`;
+    }
+    return `Con ${total} contra ${dealerStr}, plantarse tiene la mayor expectativa de ganancia en la tabla.`;
+  }
+  if (act === 'double') {
+    if (total === 11) {
+      return `11 es la mejor mano para doblar. ~31% de la baraja es figura o 10 (te dan 21). Incluso cartas menores cierran 17+. Doblar = apuesta doble en una situación casi ganada.`;
+    }
+    if (total === 10) {
+      return `Con 10, la próxima carta tiene 31% de ser figura/10 (te dan 20 — casi imbatible). Dealer muestra ${dealerStr} — ventaja clara. Dobla para ganar 2x.`;
+    }
+    if (total === 9) {
+      return `9 contra ${dealerStr} (dealer débil): cierras 17-21 la mayoría de las veces Y el dealer suele pasarse. Dobla para aprovechar.`;
+    }
+    if (soft) {
+      return `Soft ${total} contra ${dealerStr} (dealer débil). Doble ventaja: no puedes pasarte (As flexible) Y el dealer probablemente falla. Doblar maximiza el valor.`;
+    }
+    return `Tu mano tiene expectativa positiva alta contra ${dealerStr}. Doblar amplifica esa ganancia — misma probabilidad, doble apuesta.`;
+  }
+  if (act === 'split') {
+    const pairVal = pair ? cardValue(playerCards[0]) : 0;
+    if (pairVal === 11) {
+      return `Par de ASES = SIEMPRE divide. Sin dividir, A+A vale solo 12 (mano mala). Dividiendo, comienzas dos manos en 11 — cada una tiene ~31% de cerrar 21. La jugada más rentable del blackjack.`;
+    }
+    if (pairVal === 8) {
+      return `Par de 8 = 16 (LA PEOR mano). Dividir te da dos manos comenzando en 8 — aún débiles, pero mucha mejor probabilidad de cerrar 18-19. Cambias una derrota probable por dos chances más ligeras.`;
+    }
+    if (pairVal === 10) {
+      return `Par de 10 = 20 (mano casi imbatible). Dividir tira por la borda una victoria casi segura. NUNCA dividas 10s.`;
+    }
+    if (pairVal === 9) {
+      return `Par de 9 = 18 contra ${dealerStr}. Dos manos comenzando en 9 tienen mayor EV contra esta carta del dealer.`;
+    }
+    if (pairVal === 5) {
+      return `Par de 5 = 10. NO dividas — trátalo como 10 y dobla. Dos manos en 5 es jugar con basura.`;
+    }
+    if ([2,3,6,7].includes(pairVal)) {
+      return `Par de ${pairVal} contra ${dealerStr} (dealer débil). Juntos, tu mano (${pairVal*2}) es débil. Dividiendo, cada mitad nueva mano y aprovechas que el dealer probablemente se pasa.`;
+    }
+    return `Dividir este par contra ${dealerStr} tiene mayor EV que jugarlo como una sola mano.`;
+  }
+  if (act === 'surrender') {
+    if (total === 16 && (dv === 9 || dv === 10 || dv === 11)) {
+      return `16 contra ${dealerStr} es matemáticamente perdedor: pierdes MÁS del 50% de las veces incluso jugando perfecto. Rendirse devuelve la MITAD — mejor perder 50% garantizado que jugar una mano que cuesta más.`;
+    }
+    if (total === 15 && (dv === 10 || dv === 11)) {
+      return `15 contra ${dealerStr} — tu probabilidad de ganar es solo ~25%. Rendirte salva la mitad de la apuesta.`;
+    }
+    if (total === 17 && dv === 11) {
+      return `17 contra As (regla H17): incluso con 17, dealer cierra 18-21 muchas veces. Rendirse pierde 50% en lugar de ~58%.`;
+    }
+    return `Esta combinación contra ${dealerStr} tiene expectativa muy negativa. Rendirse pierde la mitad — mejor que perderlo todo casi siempre.`;
+  }
+  return '';
+}
+
+function actionExplanationEN(act, playerCards, dealerCard) {
+  const total = handTotal(playerCards);
+  const soft = isSoft(playerCards);
+  const pair = isPair(playerCards);
+  const dv = cardValue(dealerCard);
+  const dealerStr = dealerCard.rank === 'A' ? 'Ace' : dealerCard.rank;
+
+  if (act === 'hit') {
+    if (soft && total <= 17) {
+      return `Soft ${total} (Ace counted as 11): taking another card CANNOT bust you — if you'd go over 21, the Ace becomes 1 automatically. It's a "free card": can only improve.`;
+    }
+    if (total <= 11) {
+      return `With ${total} you can't bust (any card stays ≤21). Always hit — only upside, zero risk.`;
+    }
+    if (dv >= 7) {
+      return `You have ${total} (weak hand). Dealer shows ${dealerStr} — they'll finish 17-21 about 75% of the time. Standing on ${total} loses almost certainly. Hitting and risking bust is better than losing for sure.`;
+    }
+    return `${total} is too weak to stand — even against weak dealer, hitting has higher expected value.`;
+  }
+  if (act === 'stand') {
+    if (total >= 17) {
+      const bustCard = 22 - total;
+      return `${total} is a strong hand. Hitting busts you with any ${bustCard} or higher — too much risk for too little gain. Stand.`;
+    }
+    if (dv <= 6) {
+      const bustPct = (dv === 5 || dv === 6) ? '~42%' : (dv === 4 ? '~40%' : '~35%');
+      return `Dealer shows ${dealerStr} (weak card). By the rules, the dealer MUST hit until reaching 17+. With ${dealerStr}, they bust ${bustPct} of the time. Stay on ${total} and let them hang themselves — hitting only puts YOU at risk of busting first.`;
+    }
+    if (soft && total >= 18) {
+      return `Soft ${total} (Ace+${total-11}) is already decent. Hitting can drop you to a worse hard total — e.g. soft 18 + 5 becomes hard 13. Stand.`;
+    }
+    return `With ${total} vs ${dealerStr}, standing has the highest expected value in the strategy chart.`;
+  }
+  if (act === 'double') {
+    if (total === 11) {
+      return `11 is the best hand to double. ~31% of the deck is a face card or 10 (give you 21). Even smaller cards usually finish 17+. Doubling = double bet on a near-sure win.`;
+    }
+    if (total === 10) {
+      return `With 10, the next card has 31% chance of being a face/10 (gives you 20 — nearly unbeatable). Dealer shows ${dealerStr} — clear advantage. Double for 2x payout.`;
+    }
+    if (total === 9) {
+      return `9 vs ${dealerStr} (weak dealer): you'll finish 17-21 most of the time AND the dealer often busts. Double to capitalize on this double-edged advantage.`;
+    }
+    if (soft) {
+      return `Soft ${total} vs ${dealerStr} (weak dealer). Two advantages: you can't bust (Ace flexible) AND the dealer probably misses. Doubling extracts maximum value here.`;
+    }
+    return `Your hand has strong positive expected value vs ${dealerStr}. Doubling amplifies that gain — same probability, double bet.`;
+  }
+  if (act === 'split') {
+    const pairVal = pair ? cardValue(playerCards[0]) : 0;
+    if (pairVal === 11) {
+      return `Pair of ACES = ALWAYS split. Without splitting, A+A is just 12 (weak hand, Ace flexible). Splitting gives you two hands starting at 11 — each has ~31% chance of hitting 21 with the next card. The most profitable play in blackjack.`;
+    }
+    if (pairVal === 8) {
+      return `Pair of 8s = 16 — THE WORST hand in blackjack (you lose almost always standing, bust almost always hitting). Splitting gives two hands starting at 8 — still weak, but much better odds of finishing 18-19. Trade a likely loss for two lighter chances.`;
+    }
+    if (pairVal === 10) {
+      return `Pair of 10s = 20 (nearly unbeatable). Splitting throws away an almost-certain win for two hands starting at 10. NEVER split 10s.`;
+    }
+    if (pairVal === 9) {
+      return `Pair of 9s = 18 vs ${dealerStr}. 18 is good, but two hands starting at 9 vs this card have higher EV — you can finish 19/20/21 on each, and dealer can bust against both.`;
+    }
+    if (pairVal === 5) {
+      return `Pair of 5s = 10. DON'T split — treat as 10 and double. Two hands starting at 5 is playing with garbage.`;
+    }
+    if ([2,3,6,7].includes(pairVal)) {
+      return `Pair of ${pairVal}s vs ${dealerStr} (weak dealer). Kept together, your hand (${pairVal*2}) is weak. Splitting makes each half a new hand and capitalizes on the dealer probably busting.`;
+    }
+    return `Splitting this pair vs ${dealerStr} has higher EV than playing as one hand.`;
+  }
+  if (act === 'surrender') {
+    if (total === 16 && (dv === 9 || dv === 10 || dv === 11)) {
+      return `16 vs ${dealerStr} is mathematically losing: you lose MORE than 50% of the time even playing perfectly. Surrender gives back HALF the bet — better to lose 50% guaranteed than play a hand that costs more. The "least bad" play.`;
+    }
+    if (total === 15 && (dv === 10 || dv === 11)) {
+      return `15 vs ${dealerStr} — your win chance is only ~25%. Surrender saves half the bet. You "buy" the partial loss to avoid the likely full loss.`;
+    }
+    if (total === 17 && dv === 11) {
+      return `17 vs Ace (H17 rule — dealer hits soft 17): even with 17, dealer often finishes 18-21 with Ace. Surrender loses 50% instead of ~58%. Mathematical micro-adjustment.`;
+    }
+    return `This combo vs ${dealerStr} has very negative expected value. Surrender loses half the bet — better than playing and losing it all most of the time.`;
+  }
+  return '';
+}
+
+function actionExplanationPT(act, playerCards, dealerCard) {
+  const total = handTotal(playerCards);
+  const soft = isSoft(playerCards);
+  const pair = isPair(playerCards);
+  const dv = cardValue(dealerCard);
+  const dealerStr = dealerCard.rank === 'A' ? 'Ás' : dealerCard.rank;
+
+  // ----- HIT -----
+  if (act === 'hit') {
+    if (soft && total <= 17) {
+      return `Mão soft ${total} (com Ás valendo 11): pegar mais 1 carta NÃO PODE te fazer estourar — se passar de 21, o Ás vira 1 automaticamente. É "carta de graça": só pode melhorar.`;
+    }
+    if (total <= 11) {
+      return `Com ${total} é impossível estourar (qualquer carta deixa ≤21). Sempre vale pegar — só tem upside, zero risco.`;
+    }
+    if (dv >= 7) {
+      return `Você tem ${total} (mão fraca). Dealer mostra ${dealerStr} — ele vai fechar 17-21 cerca de 75% das vezes. Parado com ${total} você perde quase certo. Pegar e correr o risco de estourar é melhor que perder garantido.`;
+    }
+    return `Com ${total}, parar é fraco demais — mesmo contra dealer fraco a expectativa de pegar é maior.`;
+  }
+
+  // ----- STAND -----
+  if (act === 'stand') {
+    if (total >= 17) {
+      const bustCard = 22 - total;
+      return `Com ${total} você está forte. Pegar mais 1 carta estoura com qualquer ${bustCard} ou maior — risco grande demais pra ganho pequeno. Mantém.`;
+    }
+    if (dv <= 6) {
+      const bustPct = (dv === 5 || dv === 6) ? '~42%' : (dv === 4 ? '~40%' : '~35%');
+      return `Dealer mostra ${dealerStr} (carta fraca). Pela regra, dealer É OBRIGADO a pegar até chegar em 17+. Com ${dealerStr}, ele estoura ${bustPct} das vezes tentando. Você fica com ${total} e deixa ele se enforcar sozinho — pegar carta só te coloca em risco de estourar PRIMEIRO.`;
+    }
+    if (soft && total >= 18) {
+      return `Soft ${total} (Ás+${total-11}) já é mão decente. Pegar mais carta pode te derrubar pra um total pior — ex: soft 18 + 5 vira hard 13. Mantém.`;
+    }
+    return `Com ${total} contra ${dealerStr}, parar tem a maior expectativa de ganho na tabela de estratégia.`;
+  }
+
+  // ----- DOUBLE -----
+  if (act === 'double') {
+    if (total === 11) {
+      return `11 é a melhor mão pra dobrar. ~31% do baralho é figura ou 10 (te dão 21). Mesmo cartas menores costumam fechar 17+. Dobrar = aposta dupla numa situação que você ganha quase sempre.`;
+    }
+    if (total === 10) {
+      return `Com 10, a próxima carta tem 31% de chance de ser figura/10 (te dão 20 — quase imbatível). Dealer mostra ${dealerStr} — vantagem clara. Dobre pra ganhar 2x quando vencer.`;
+    }
+    if (total === 9) {
+      return `9 contra ${dealerStr} (dealer fraco): você fecha 17-21 a maioria das vezes E o dealer provavelmente estoura. Dobre pra aproveitar essa janela de vantagem dupla.`;
+    }
+    if (soft) {
+      return `Soft ${total} contra ${dealerStr} (dealer fraco). Vantagem dupla: você não pode estourar (Ás flexível) E o dealer provavelmente erra. Dobrar é o jeito de extrair o máximo dessa situação.`;
+    }
+    return `Sua mão tem expectativa positiva forte contra ${dealerStr}. Dobrar amplifica esse ganho — mesma probabilidade, mas aposta dupla.`;
+  }
+
+  // ----- SPLIT -----
+  if (act === 'split') {
+    const pairVal = pair ? cardValue(playerCards[0]) : 0;
+    if (pairVal === 11) {
+      return `Par de ASES = SEMPRE divide. Sem dividir, A+A vale só 12 (mão ruim, Ás flexível). Dividindo, você começa duas mãos com 11 — cada uma tem ~31% de fechar 21 com a próxima carta. É a jogada mais lucrativa do blackjack.`;
+    }
+    if (pairVal === 8) {
+      return `Par de 8 = 16 — A PIOR mão do blackjack (você perde quase sempre parado, e estoura quase sempre pegando). Dividindo, cada mão começa em 8 — ainda fraca, mas com chance bem melhor de fechar 18-19. Trocar uma derrota provável por duas chances mais leves.`;
+    }
+    if (pairVal === 10) {
+      return `Par de 10 = 20 (mão quase imbatível). Dividir é jogar fora uma vitória quase certa pra começar duas mãos em 10. NUNCA divide 10s.`;
+    }
+    if (pairVal === 9) {
+      return `Par de 9 = 18 contra ${dealerStr}. 18 é boa, mas duas mãos começando em 9 contra essa carta tem EV maior — você pode fechar 19/20/21 em cada, e o dealer pode estourar contra ambas.`;
+    }
+    if (pairVal === 5) {
+      return `Par de 5 = 10. NÃO divide — trate como 10 e dobre. Duas mãos começando em 5 é jogar com lixo.`;
+    }
+    if ([2,3,6,7].includes(pairVal)) {
+      return `Par de ${pairVal} contra ${dealerStr} (dealer fraco). Mantida junta, sua mão (${pairVal*2}) é fraca. Dividindo, cada metade vira mão nova e você aproveita que dealer provavelmente estoura.`;
+    }
+    return `Dividir esse par contra ${dealerStr} tem EV maior do que jogar a mão como uma só.`;
+  }
+
+  // ----- SURRENDER -----
+  if (act === 'surrender') {
+    if (total === 16 && (dv === 9 || dv === 10 || dv === 11)) {
+      return `16 contra ${dealerStr} é matematicamente perdedor: você perde MAIS de 50% das vezes mesmo jogando perfeito. Render devolve metade da aposta — melhor perder 50% garantido do que jogar uma mão que custa mais. É a jogada "menos pior".`;
+    }
+    if (total === 15 && (dv === 10 || dv === 11)) {
+      return `15 contra ${dealerStr} — sua chance de ganhar é só ~25%. Render salva metade da aposta. Você "compra" a perda parcial pra evitar a perda total provável.`;
+    }
+    if (total === 17 && dv === 11) {
+      return `17 contra Ás (regra H17 — dealer pede em soft 17): mesmo com 17, dealer fecha 18-21 muitas vezes. Render perde 50% em vez de ~58%. Micro-ajuste matemático.`;
+    }
+    return `Essa combinação contra ${dealerStr} tem expectativa muito negativa. Render perde metade da aposta — melhor que jogar e perder tudo na maioria das vezes.`;
+  }
+
+  return '';
+}
+
+// ==================== GAME STATE ====================
+let state = {
+  shoe: [],
+  balance: 1000,
+  bet: 0,
+  insuranceBet: 0,
+  dealerCards: [],
+  playerHands: [],   // array of { cards, bet, finished, doubled, surrendered, isSplitAces }
+  activeHandIdx: 0,
+  phase: 'betting',  // betting | playerTurn | dealerTurn | gameOver
+  lastStrategyMsg: '',  // verdict for last action (preserved into round result)
+  lastStrategyType: '', // 'correct' | 'wrong' | ''
+  autoMode: false,   // robot plays optimal strategy
+  autoTimer: null,
+  resetTimer: null,
+  pendingAdvance: null,  // deferred advanceHand while wrong-move modal is open
+  stats: {
+    hands: 0, wins: 0, losses: 0, pushes: 0, blackjacks: 0,
+    strategyTotal: 0, strategyCorrect: 0
+  }
+};
+
+// Load stats from localStorage
+// ==================== I18N (PT / EN) ====================
+const I18N = {
+  pt: {
+    title: '♠ BLACKJACK ♥',
+    menu_rules: 'Regras',
+    menu_auto: 'Robô Auto',
+    menu_auto_pause: 'Pausar Robô',
+    menu_lang: 'Idioma: PT',
+    menu_restart: 'Reiniciar',
+    menu_autostart: 'Auto-iniciar: ON',
+    menu_giveup: 'Sair da rodada',
+    menu_about: 'Sobre',
+    rules_close: 'Fechar',
+    robot_playing: 'Robô jogando',
+
+    btn_hit: 'Pedir',
+    btn_stand: 'Parar',
+    btn_double: 'Dobrar',
+    btn_split: 'Dividir',
+    btn_surrender: 'Render',
+    btn_insurance: 'Seguro',
+    btn_hint: 'Dica',
+    btn_deal: 'Distribuir',
+    btn_clear: 'Limpar',
+    btn_skip_wait: '▶ Pular espera',
+    btn_play_again: 'Jogar novamente',
+    btn_change_bet: 'Mudar aposta',
+
+    lbl_hit: 'PEDIR',
+    lbl_stand: 'PARAR',
+    lbl_double: 'DOBRAR',
+    lbl_split: 'DIVIDIR',
+    lbl_surrender: 'RENDER',
+
+    stats_title: 'Estatísticas',
+    stats_hands: 'Mãos',
+    stats_wins: 'Vitórias',
+    stats_losses: 'Derrotas',
+    stats_pushes: 'Empates',
+    stats_bj: 'Blackjacks',
+    stats_strategy: 'Acerto Estr.',
+    stats_reset: 'Zerar Stats',
+    stats_reset_confirm: 'Zerar todas as estatísticas?',
+
+
+    wrong_title: 'JOGADA ERRADA',
+    wrong_you_chose: 'Você escolheu',
+    wrong_should: 'A jogada correta era',
+    wrong_continue: 'Continuar',
+    wrong_your_cards: 'Suas cartas',
+    wrong_dealer: 'Dealer',
+    wrong_vs: 'vs',
+
+    msg_place_bet: 'Faça sua aposta para começar.',
+    msg_place_bet_short: 'Faça sua aposta.',
+    msg_your_turn: 'Sua vez.',
+    msg_decide: 'Decida sua jogada — ou clique em Dica.',
+    msg_insurance_offer: 'Dealer mostra Ás — você pode comprar Seguro (½ aposta).',
+    msg_dealing: 'Distribuindo...',
+    msg_natural_bj: 'BLACKJACK NATURAL!',
+    msg_pays_3_2: 'Pago 3:2.',
+    msg_win_simple: '✓ Vitória!',
+    msg_dealer_busted: ' Dealer estourou.',
+    msg_push: '= Empate. Aposta devolvida.',
+    msg_loss_simple: '✗ Derrota.',
+    msg_busted: '✗ Você estourou.',
+    msg_dealer_bj: '✗ Dealer fez Blackjack.',
+    msg_surrendered: '↩ Você se rendeu. Recebeu metade da aposta.',
+    msg_balance_zero: 'Saldo zerado — recebido 1000 fichas para continuar.',
+    msg_skip_or_wait: 'Aguarde ou clique "Nova rodada" para continuar.',
+    msg_no_chips: 'Sem fichas! Aguarde o reset automático.',
+    msg_shuffled: 'Sapato reembaralhado.',
+    msg_restart_confirm: 'Reiniciar jogo? Saldo volta para 1000 e a rodada atual é descartada.',
+    msg_game_restarted: 'Jogo reiniciado.',
+    msg_bet_chip_blocked: 'Saldo insuficiente para essa ficha.',
+    msg_bet_too_high: 'Aposta não pode ser maior que o saldo.',
+    msg_current_bet: 'Aposta atual: ',
+    msg_current_bet_after: '. Clique "Distribuir" para começar.',
+    msg_insufficient_double: 'Saldo insuficiente para dobrar.',
+    msg_insufficient_split: 'Saldo insuficiente para dividir.',
+    msg_insurance_bought_a: 'Seguro comprado: ',
+    msg_insurance_bought_b: ' fichas. Continue jogando.',
+    msg_insurance_insufficient: 'Saldo insuficiente para Seguro.',
+    msg_insurance_paid: 'Seguro pagou: +',
+    msg_insurance_paid_suf: ' (dealer tinha BJ)',
+    msg_insurance_lost: 'Seguro perdido: -',
+    msg_hands_summary: 'Mãos: ',
+    msg_hint_prefix: 'Estratégia básica: ',
+
+    dealer: 'Dealer',
+    you: 'Você',
+    bet_label: 'Aposta:',
+    bet_placeholder: 'Aposta',
+    status_bust: '✗ Bust',
+    status_blackjack: '★ Blackjack',
+  },
+
+  en: {
+    title: '♠ BLACKJACK ♥',
+    menu_rules: 'Rules',
+    menu_auto: 'Auto Robot',
+    menu_auto_pause: 'Pause Robot',
+    menu_lang: 'Language: EN',
+    menu_restart: 'Restart',
+    menu_autostart: 'Auto-start: ON',
+    menu_giveup: 'Leave hand',
+    menu_about: 'About',
+    rules_close: 'Close',
+    robot_playing: 'Robot playing',
+
+    btn_hit: 'Hit',
+    btn_stand: 'Stand',
+    btn_double: 'Double',
+    btn_split: 'Split',
+    btn_surrender: 'Surrender',
+    btn_insurance: 'Insurance',
+    btn_hint: 'Hint',
+    btn_deal: 'Deal',
+    btn_clear: 'Clear',
+    btn_skip_wait: '▶ Skip wait',
+    btn_play_again: 'Play again',
+    btn_change_bet: 'Change bet',
+
+    lbl_hit: 'HIT',
+    lbl_stand: 'STAND',
+    lbl_double: 'DOUBLE',
+    lbl_split: 'SPLIT',
+    lbl_surrender: 'SURRENDER',
+
+    stats_title: 'Statistics',
+    stats_hands: 'Hands',
+    stats_wins: 'Wins',
+    stats_losses: 'Losses',
+    stats_pushes: 'Pushes',
+    stats_bj: 'Blackjacks',
+    stats_strategy: 'Strategy %',
+    stats_reset: 'Reset Stats',
+    stats_reset_confirm: 'Reset all stats?',
+
+    wrong_title: 'WRONG MOVE',
+    wrong_you_chose: 'You chose',
+    wrong_should: 'The correct play was',
+    wrong_continue: 'Continue',
+    wrong_your_cards: 'Your cards',
+    wrong_dealer: 'Dealer',
+    wrong_vs: 'vs',
+
+    msg_place_bet: 'Place your bet to start.',
+    msg_place_bet_short: 'Place your bet.',
+    msg_your_turn: 'Your turn.',
+    msg_decide: 'Make your move — or click Hint.',
+    msg_insurance_offer: 'Dealer shows Ace — you can buy Insurance (½ bet).',
+    msg_dealing: 'Dealing...',
+    msg_natural_bj: 'NATURAL BLACKJACK!',
+    msg_pays_3_2: 'Pays 3:2.',
+    msg_win_simple: '✓ You win!',
+    msg_dealer_busted: ' Dealer busted.',
+    msg_push: '= Push. Bet returned.',
+    msg_loss_simple: '✗ You lose.',
+    msg_busted: '✗ You busted.',
+    msg_dealer_bj: '✗ Dealer hit Blackjack.',
+    msg_surrendered: '↩ You surrendered. Got half the bet back.',
+    msg_balance_zero: 'Balance was zero — received 1000 chips to continue.',
+    msg_skip_or_wait: 'Wait or click "New round" to continue.',
+    msg_no_chips: 'Out of chips! Wait for auto-reset.',
+    msg_shuffled: 'Shoe reshuffled.',
+    msg_restart_confirm: 'Restart game? Balance returns to 1000.',
+    msg_game_restarted: 'Game restarted.',
+    msg_bet_chip_blocked: 'Not enough balance for this chip.',
+    msg_bet_too_high: 'Bet cannot exceed balance.',
+    msg_current_bet: 'Current bet: ',
+    msg_current_bet_after: '. Click "Deal" to start.',
+    msg_insufficient_double: 'Not enough balance to double.',
+    msg_insufficient_split: 'Not enough balance to split.',
+    msg_insurance_bought_a: 'Insurance bought: ',
+    msg_insurance_bought_b: ' chips. Keep playing.',
+    msg_insurance_insufficient: 'Not enough balance for Insurance.',
+    msg_insurance_paid: 'Insurance paid: +',
+    msg_insurance_paid_suf: ' (dealer had BJ)',
+    msg_insurance_lost: 'Insurance lost: -',
+    msg_hands_summary: 'Hands: ',
+    msg_hint_prefix: 'Basic strategy: ',
+
+    dealer: 'Dealer',
+    you: 'You',
+    bet_label: 'Bet:',
+    bet_placeholder: 'Bet',
+    status_bust: '✗ Bust',
+    status_blackjack: '★ Blackjack',
+  },
+
+  es: {
+    title: '♠ BLACKJACK ♥',
+    menu_rules: 'Reglas',
+    menu_auto: 'Robot Auto',
+    menu_auto_pause: 'Pausar Robot',
+    menu_lang: 'Idioma: ES',
+    menu_restart: 'Reiniciar',
+    menu_autostart: 'Auto-inicio: ON',
+    menu_giveup: 'Salir de la ronda',
+    menu_about: 'Acerca de',
+    rules_close: 'Cerrar',
+    robot_playing: 'Robot jugando',
+
+    btn_hit: 'Pedir',
+    btn_stand: 'Plantarse',
+    btn_double: 'Doblar',
+    btn_split: 'Dividir',
+    btn_surrender: 'Rendirse',
+    btn_insurance: 'Seguro',
+    btn_hint: 'Pista',
+    btn_deal: 'Repartir',
+    btn_clear: 'Limpiar',
+    btn_skip_wait: '▶ Saltar espera',
+    btn_play_again: 'Jugar otra vez',
+    btn_change_bet: 'Cambiar apuesta',
+
+    lbl_hit: 'PEDIR',
+    lbl_stand: 'PLANTARSE',
+    lbl_double: 'DOBLAR',
+    lbl_split: 'DIVIDIR',
+    lbl_surrender: 'RENDIRSE',
+
+    stats_title: 'Estadísticas',
+    stats_hands: 'Manos',
+    stats_wins: 'Victorias',
+    stats_losses: 'Derrotas',
+    stats_pushes: 'Empates',
+    stats_bj: 'Blackjacks',
+    stats_strategy: 'Estrategia %',
+    stats_reset: 'Reiniciar Stats',
+    stats_reset_confirm: '¿Reiniciar todas las estadísticas?',
+
+    wrong_title: 'JUGADA INCORRECTA',
+    wrong_you_chose: 'Elegiste',
+    wrong_should: 'La jugada correcta era',
+    wrong_continue: 'Continuar',
+    wrong_your_cards: 'Tus cartas',
+    wrong_dealer: 'Dealer',
+    wrong_vs: 'vs',
+
+    msg_place_bet: 'Haz tu apuesta para empezar.',
+    msg_place_bet_short: 'Haz tu apuesta.',
+    msg_your_turn: 'Tu turno.',
+    msg_decide: 'Toma tu decisión — o haz clic en Pista.',
+    msg_insurance_offer: 'Dealer muestra As — puedes comprar Seguro (½ apuesta).',
+    msg_dealing: 'Repartiendo...',
+    msg_natural_bj: '¡BLACKJACK NATURAL!',
+    msg_pays_3_2: 'Paga 3:2.',
+    msg_win_simple: '✓ ¡Ganaste!',
+    msg_dealer_busted: ' Dealer pasó.',
+    msg_push: '= Empate. Apuesta devuelta.',
+    msg_loss_simple: '✗ Pierdes.',
+    msg_busted: '✗ Te pasaste.',
+    msg_dealer_bj: '✗ Dealer hizo Blackjack.',
+    msg_surrendered: '↩ Te rendiste. Recuperas la mitad de la apuesta.',
+    msg_balance_zero: 'Saldo en cero — recibes 1000 fichas para continuar.',
+    msg_skip_or_wait: 'Espera o haz clic en "Nueva ronda" para continuar.',
+    msg_no_chips: '¡Sin fichas! Espera el reinicio automático.',
+    msg_shuffled: 'Zapato barajado.',
+    msg_restart_confirm: '¿Reiniciar juego? El saldo vuelve a 1000.',
+    msg_game_restarted: 'Juego reiniciado.',
+    msg_bet_chip_blocked: 'Saldo insuficiente para esa ficha.',
+    msg_bet_too_high: 'La apuesta no puede superar el saldo.',
+    msg_current_bet: 'Apuesta actual: ',
+    msg_current_bet_after: '. Haz clic en "Repartir" para empezar.',
+    msg_insufficient_double: 'Saldo insuficiente para doblar.',
+    msg_insufficient_split: 'Saldo insuficiente para dividir.',
+    msg_insurance_bought_a: 'Seguro comprado: ',
+    msg_insurance_bought_b: ' fichas. Sigue jugando.',
+    msg_insurance_insufficient: 'Saldo insuficiente para Seguro.',
+    msg_insurance_paid: 'Seguro pagado: +',
+    msg_insurance_paid_suf: ' (dealer tenía BJ)',
+    msg_insurance_lost: 'Seguro perdido: -',
+    msg_hands_summary: 'Manos: ',
+    msg_hint_prefix: 'Estrategia básica: ',
+
+    dealer: 'Dealer',
+    you: 'Tú',
+    bet_label: 'Apuesta:',
+    bet_placeholder: 'Apuesta',
+    status_bust: '✗ Pasado',
+    status_blackjack: '★ Blackjack',
+  },
+
+  tr: {
+    title: '♠ BLACKJACK ♥',
+    menu_rules: 'Kurallar',
+    menu_auto: 'Otomatik Robot',
+    menu_auto_pause: 'Robotu Durdur',
+    menu_lang: 'Dil: TR',
+    menu_restart: 'Yeniden Başlat',
+    menu_autostart: 'Otomatik Başlat: ON',
+    menu_giveup: 'Elden Ayrıl',
+    menu_about: 'Hakkında',
+    rules_close: 'Kapat',
+    robot_playing: 'Robot oynuyor',
+
+    btn_hit: 'Kart Çek',
+    btn_stand: 'Dur',
+    btn_double: 'İkile',
+    btn_split: 'Böl',
+    btn_surrender: 'Teslim Ol',
+    btn_insurance: 'Sigorta',
+    btn_hint: 'İpucu',
+    btn_deal: 'Dağıt',
+    btn_clear: 'Temizle',
+    btn_skip_wait: '▶ Beklemeyi Atla',
+    btn_play_again: 'Tekrar Oyna',
+    btn_change_bet: 'Bahsi Değiştir',
+
+    lbl_hit: 'KART ÇEK',
+    lbl_stand: 'DUR',
+    lbl_double: 'İKİLE',
+    lbl_split: 'BÖL',
+    lbl_surrender: 'TESLİM OL',
+
+    stats_title: 'İstatistikler',
+    stats_hands: 'El',
+    stats_wins: 'Galibiyet',
+    stats_losses: 'Mağlubiyet',
+    stats_pushes: 'Beraberlik',
+    stats_bj: 'Blackjackler',
+    stats_strategy: 'Strateji %',
+    stats_reset: 'Stat\'ları Sıfırla',
+    stats_reset_confirm: 'Tüm istatistikler sıfırlansın mı?',
+
+    wrong_title: 'YANLIŞ HAREKET',
+    wrong_you_chose: 'Senin seçimin',
+    wrong_should: 'Doğru hareket',
+    wrong_continue: 'Devam',
+    wrong_your_cards: 'Kartların',
+    wrong_dealer: 'Kurpiyer',
+    wrong_vs: 'vs',
+
+    msg_place_bet: 'Başlamak için bahsini koy.',
+    msg_place_bet_short: 'Bahsini koy.',
+    msg_your_turn: 'Sıra sende.',
+    msg_decide: 'Hareketini yap — ya da İpucu\'na tıkla.',
+    msg_insurance_offer: 'Kurpiyer As gösteriyor — Sigorta alabilirsin (½ bahis).',
+    msg_dealing: 'Dağıtılıyor...',
+    msg_natural_bj: 'DOĞAL BLACKJACK!',
+    msg_pays_3_2: '3:2 öder.',
+    msg_win_simple: '✓ Kazandın!',
+    msg_dealer_busted: ' Kurpiyer yandı.',
+    msg_push: '= Beraberlik. Bahis iade.',
+    msg_loss_simple: '✗ Kaybettin.',
+    msg_busted: '✗ Yandın.',
+    msg_dealer_bj: '✗ Kurpiyer Blackjack yaptı.',
+    msg_surrendered: '↩ Teslim oldun. Bahsin yarısı iade.',
+    msg_balance_zero: 'Bakiye sıfır — devam etmek için 1000 fiş aldın.',
+    msg_skip_or_wait: 'Bekle veya "Tekrar Oyna" tıkla.',
+    msg_no_chips: 'Fiş kalmadı! Otomatik sıfırlamayı bekle.',
+    msg_shuffled: 'Deste karıldı.',
+    msg_restart_confirm: 'Oyunu yeniden başlat? Bakiye 1000\'e döner.',
+    msg_game_restarted: 'Oyun yeniden başladı.',
+    msg_bet_chip_blocked: 'Bu fiş için yetersiz bakiye.',
+    msg_bet_too_high: 'Bahis bakiyeyi aşamaz.',
+    msg_current_bet: 'Mevcut bahis: ',
+    msg_current_bet_after: '. Başlamak için "Dağıt" tıkla.',
+    msg_insufficient_double: 'İkilemek için yetersiz bakiye.',
+    msg_insufficient_split: 'Bölmek için yetersiz bakiye.',
+    msg_insurance_bought_a: 'Sigorta alındı: ',
+    msg_insurance_bought_b: ' fiş. Oyna devam.',
+    msg_insurance_insufficient: 'Sigorta için yetersiz bakiye.',
+    msg_insurance_paid: 'Sigorta ödendi: +',
+    msg_insurance_paid_suf: ' (kurpiyerde BJ vardı)',
+    msg_insurance_lost: 'Sigorta kaybedildi: -',
+    msg_hands_summary: 'Eller: ',
+    msg_hint_prefix: 'Temel strateji: ',
+
+    dealer: 'Kurpiyer',
+    you: 'Sen',
+    bet_label: 'Bahis:',
+    bet_placeholder: 'Bahis',
+    status_bust: '✗ Yandı',
+    status_blackjack: '★ Blackjack',
+  }
+};
+
+let currentLang = (() => {
+  try {
+    const saved = localStorage.getItem('blackjack_lang');
+    if (saved && ['pt','en','es','tr'].includes(saved)) return saved;
+  } catch(e) {}
+  // Auto-detect from device language
+  const browser = ((navigator.languages && navigator.languages[0]) || navigator.language || 'en').toLowerCase();
+  if (browser.startsWith('pt')) return 'pt';
+  if (browser.startsWith('es')) return 'es';
+  if (browser.startsWith('tr')) return 'tr';
+  return 'en';
+})();
+
+function t(key) {
+  const v = (I18N[currentLang] && I18N[currentLang][key]);
+  return (v !== undefined) ? v : key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.dataset.i18nHtml);
+  });
+  // Robot mode dynamic label (text inside <span>)
+  const menuAuto = document.getElementById('menu-auto');
+  if (menuAuto) {
+    const span = menuAuto.querySelector('span');
+    if (span) span.textContent = state.autoMode ? t('menu_auto_pause') : t('menu_auto');
+  }
+  // Auto-start setting dynamic label
+  updateAutoStartLabel();
+  // Toggle rules modal language version
+  ['pt','en','es','tr'].forEach(lang => {
+    const el = document.getElementById('rules-' + lang);
+    if (el) el.style.display = currentLang === lang ? 'block' : 'none';
+  });
+  // Toggle about modal language version
+  ['pt','en','es','tr'].forEach(lang => {
+    const el = document.getElementById('about-' + lang);
+    if (el) el.style.display = currentLang === lang ? 'block' : 'none';
+  });
+  // House edge note text
+  const heNote = document.getElementById('house-edge-note');
+  if (heNote) {
+    const heMap = {
+      pt: 'Vantagem da casa com estratégia perfeita: ~0.5%',
+      en: 'House edge with perfect strategy: ~0.5%',
+      es: 'Ventaja de la casa con estrategia perfecta: ~0.5%',
+      tr: 'Mükemmel strateji ile ev avantajı: ~0,5%',
+    };
+    heNote.textContent = heMap[currentLang] || heMap.en;
+  }
+  // Restart button title/aria-label (icon-only button, no visible text)
+  const restartBtn = document.querySelector('.icon-btn-small');
+  if (restartBtn) {
+    restartBtn.setAttribute('aria-label', t('menu_restart'));
+    restartBtn.setAttribute('title', t('menu_restart'));
+  }
+  // Bet chip click-to-leave title
+  const betDisplay = document.getElementById('casino-bet-display');
+  if (betDisplay) {
+    const tipMap = {
+      pt: 'Clique para mudar aposta',
+      en: 'Click to change bet',
+      es: 'Clic para cambiar la apuesta',
+      tr: 'Bahsi değiştirmek için tıkla',
+    };
+    betDisplay.setAttribute('title', tipMap[currentLang] || tipMap.en);
+  }
+  // Refresh dynamic UI that depends on currentLang internally
+  if (typeof renderStats === 'function') renderStats();
+  if (typeof renderBet === 'function') renderBet();
+  if (typeof renderPlayerHands === 'function') renderPlayerHands();
+}
+
+function setLanguage(lang) {
+  if (!['pt','en','es','tr'].includes(lang)) return;
+  currentLang = lang;
+  try { localStorage.setItem('blackjack_lang', lang); } catch(e) {}
+  applyTranslations();
+}
+
+function toggleLanguage() {
+  // Cycle: PT → EN → ES → TR → PT
+  const cycle = ['pt','en','es','tr'];
+  const next = cycle[(cycle.indexOf(currentLang) + 1) % cycle.length];
+  setLanguage(next);
+}
+
+// ==================== MOBILE DETECTION & AUTO-START ====================
+function isMobile() {
+  return window.matchMedia('(max-width: 768px)').matches
+    || ('ontouchstart' in window && window.innerWidth < 900);
+}
+
+// Auto-start setting: defaults to OFF on mobile, ON on desktop. Stored in localStorage.
+let autoStartEnabled = (() => {
+  try {
+    const saved = localStorage.getItem('blackjack_autoStart');
+    if (saved === null) return !isMobile();
+    return saved === 'true';
+  } catch(e) { return !isMobile(); }
+})();
+
+function toggleAutoStartSetting() {
+  autoStartEnabled = !autoStartEnabled;
+  try { localStorage.setItem('blackjack_autoStart', autoStartEnabled); } catch(e) {}
+  updateAutoStartLabel();
+}
+
+function updateAutoStartLabel() {
+  const btn = document.getElementById('menu-autostart');
+  if (!btn) return;
+  const span = btn.querySelector('span');
+  if (!span) return;
+  const labels = {
+    pt: { on: 'Auto-iniciar: ON', off: 'Auto-iniciar: OFF' },
+    en: { on: 'Auto-start: ON', off: 'Auto-start: OFF' },
+    es: { on: 'Auto-inicio: ON', off: 'Auto-inicio: OFF' },
+    tr: { on: 'Otomatik Başlat: ON', off: 'Otomatik Başlat: OFF' },
+  };
+  const set = labels[currentLang] || labels.pt;
+  span.textContent = autoStartEnabled ? set.on : set.off;
+}
+
+// ==================== HAMBURGER MENU ====================
+function toggleMenu() {
+  document.getElementById('hamburger-menu').classList.toggle('show');
+  document.getElementById('hamburger-btn').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('hamburger-menu').classList.remove('show');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#hamburger-btn') && !e.target.closest('#hamburger-menu')) {
+    closeMenu();
+  }
+});
+
+// ==================== COLLAPSIBLE PANELS ====================
+function toggleStatsPanel() {
+  const panel = document.getElementById('stats-panel');
+  panel.classList.toggle('collapsed');
+  try { localStorage.setItem('blackjack_stats_collapsed', panel.classList.contains('collapsed')); } catch(e) {}
+}
+// Strategy panel removed — function kept as no-op for safety
+function toggleStrategyPanel() {}
+
+function loadStats() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('blackjack_stats'));
+    if (saved) state.stats = { ...state.stats, ...saved };
+    const bal = parseInt(localStorage.getItem('blackjack_balance'));
+    if (!isNaN(bal) && bal > 0) state.balance = bal;
+  } catch(e) {}
+}
+function saveStats() {
+  try {
+    localStorage.setItem('blackjack_stats', JSON.stringify(state.stats));
+    localStorage.setItem('blackjack_balance', String(state.balance));
+  } catch(e) {}
+}
+
+function resetStats() {
+  state.stats = { hands: 0, wins: 0, losses: 0, pushes: 0, blackjacks: 0, strategyTotal: 0, strategyCorrect: 0 };
+  saveStats();
+  renderStats();
+}
+
+// ==================== RENDERING ====================
+function renderCard(card, hidden = false) {
+  if (hidden) {
+    return `<div class="card back"></div>`;
+  }
+  const suitChar = card.suit;
+  return `
+    <div class="card ${card.color}">
+      <div class="top">
+        <div class="rank">${card.rank}</div>
+        <div class="suit-small">${suitChar}</div>
+      </div>
+      <div class="suit-big">${suitChar}</div>
+      <div class="bottom">
+        <div class="rank">${card.rank}</div>
+        <div class="suit-small">${suitChar}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDealer(hideHole = false) {
+  const el = document.getElementById('dealer-hand');
+  el.innerHTML = state.dealerCards.map((c,i) => renderCard(c, hideHole && i === 1)).join('');
+
+  const statusEl = document.getElementById('dealer-status');
+  if (hideHole || state.dealerCards.length === 0) {
+    statusEl.textContent = '';
+    statusEl.className = 'hand-status';
+  } else {
+    const total = handTotal(state.dealerCards);
+    statusEl.className = 'hand-status';
+    if (total > 21) {
+      statusEl.textContent = t('status_bust');
+      statusEl.classList.add('bust');
+    } else if (isBlackjack(state.dealerCards)) {
+      statusEl.textContent = t('status_blackjack');
+      statusEl.classList.add('blackjack');
+    } else {
+      statusEl.textContent = '';
+    }
+  }
+}
+
+function renderPlayerHands() {
+  const el = document.getElementById('player-hands');
+  if (state.playerHands.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = state.playerHands.map((h, idx) => {
+    const total = handTotal(h.cards);
+    const isActive = idx === state.activeHandIdx && state.phase === 'playerTurn';
+    let statusClass = 'hand-status';
+    let statusText = '';
+    if (total > 21) {
+      statusClass += ' bust';
+      statusText = t('status_bust');
+    } else if (isBlackjack(h.cards) && state.playerHands.length === 1) {
+      statusClass += ' blackjack';
+      statusText = t('status_blackjack');
+    }
+
+    return `
+      <div class="player-hand ${isActive ? 'active' : ''}">
+        <div class="hand">${h.cards.map(c => renderCard(c)).join('')}</div>
+        <div class="${statusClass}">${statusText}</div>
+        ${(h.doubled || h.surrendered) ? `<div class="bet-tag">${h.doubled ? (currentLang === 'en' ? 'doubled' : currentLang === 'es' ? 'doblada' : currentLang === 'tr' ? 'ikilendi' : 'dobrada') : (currentLang === 'en' ? 'surrendered' : currentLang === 'es' ? 'rendida' : currentLang === 'tr' ? 'teslim' : 'rendida')}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStats() {
+  document.getElementById('stat-hands').textContent = state.stats.hands;
+  document.getElementById('stat-wins').textContent = state.stats.wins;
+  document.getElementById('stat-losses').textContent = state.stats.losses;
+  document.getElementById('stat-pushes').textContent = state.stats.pushes;
+  document.getElementById('stat-bj').textContent = state.stats.blackjacks;
+  const pct = state.stats.strategyTotal === 0 ? '—'
+    : Math.round(100 * state.stats.strategyCorrect / state.stats.strategyTotal) + '%';
+  document.getElementById('stat-strategy').textContent = pct;
+  // Floating widget summary (showing key metric: hands + strategy %)
+  const sum = document.getElementById('stats-summary');
+  if (sum) {
+    if (state.stats.hands === 0) {
+      sum.textContent = 'Stats';
+    } else {
+      const word = currentLang === 'en' ? ' hands · ' : currentLang === 'es' ? ' manos · ' : currentLang === 'tr' ? ' el · ' : ' mãos · ';
+      sum.textContent = state.stats.hands + word + pct;
+    }
+  }
+}
+
+function renderBalance() {
+  document.getElementById('balance').textContent = state.balance;
+}
+
+function renderBet(pulse = false) {
+  document.getElementById('current-bet').textContent = state.bet;
+  // Update casino-mode bet chip display
+  const display = document.getElementById('casino-bet-display');
+  const chipEl = document.getElementById('casino-bet-chip');
+  if (display && chipEl) {
+    if (state.bet > 0) {
+      display.classList.remove('empty');
+      // Color the chip based on bet size (largest denomination)
+      const denoms = [{v:500,c:'#6a2bd9'},{v:100,c:'#1a1a1a'},{v:50,c:'#fd7e14'},{v:25,c:'#20c997'},{v:10,c:'#4dabf7'}];
+      const top = denoms.find(d => state.bet >= d.v) || denoms[denoms.length-1];
+      chipEl.style.background = top.c;
+      chipEl.textContent = state.bet;
+      if (pulse) {
+        chipEl.classList.remove('pulse');
+        // force reflow so animation can restart
+        void chipEl.offsetWidth;
+        chipEl.classList.add('pulse');
+      }
+    } else {
+      display.classList.add('empty');
+      chipEl.style.background = '';
+      chipEl.textContent = t('bet_placeholder');
+      chipEl.classList.remove('pulse');
+    }
+  }
+}
+
+// Two-part feedback: stateText (top, big) + strategyText (bottom, small)
+// stateText = current game state (Sua vez / Vitória / Bust / etc)
+// strategyText = strategy verdict for last action (or hint, or empty)
+// type = '', 'correct', 'wrong', 'hint', 'result-win', 'result-loss', 'result-push'
+function setFeedback(stateText, strategyText = '', type = '') {
+  const el = document.getElementById('feedback');
+  document.getElementById('feedback-state').textContent = stateText || '';
+  document.getElementById('feedback-strategy').textContent = strategyText || '';
+  el.className = 'feedback' + (type ? ' ' + type : '');
+}
+
+let toastTimer = null;
+function showToast(stateText, strategyText, type) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  document.getElementById('toast-state').textContent = stateText || '';
+  document.getElementById('toast-strategy').textContent = strategyText || '';
+  toast.className = 'toast' + (type ? ' ' + type : '');
+
+  // Only show toast in casino mode
+  if (!document.body.classList.contains('casino-mode')) return;
+  // Skip empty toasts and the initial idle prompt
+  if (!stateText && !strategyText) return;
+
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  // Result toasts stay longer
+  const duration = (type && type.startsWith('result-')) ? 4500 : 3500;
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
+function setMessage(text) {
+  document.getElementById('game-message').textContent = text;
+}
+
+function updateButtons() {
+  const phase = state.phase;
+  const isPlayerTurn = phase === 'playerTurn';
+  const hand = state.playerHands[state.activeHandIdx];
+
+  document.getElementById('btn-deal').disabled = !(phase === 'betting' && state.bet > 0 && state.bet <= state.balance);
+
+  // Disable everything if not player's turn
+  const allActions = ['hit','stand','double','split','surrender','insurance','hint'];
+  for (const a of allActions) {
+    document.getElementById('btn-' + a).disabled = true;
+  }
+  if (!isPlayerTurn || !hand) return;
+
+  document.getElementById('btn-hit').disabled = false;
+  document.getElementById('btn-stand').disabled = false;
+  document.getElementById('btn-hint').disabled = false;
+
+  const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
+  // Double allowed: first move, enough balance
+  document.getElementById('btn-double').disabled = !(onFirstMove && state.balance >= hand.bet);
+  // Split allowed: first move on first hand, pair, no prior split (we allow only one split for simplicity)
+  const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
+  document.getElementById('btn-split').disabled = !canSplit;
+  // Surrender allowed: first move on first hand, no split done
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+  document.getElementById('btn-surrender').disabled = !canSurrender;
+  // Insurance: only when dealer shows Ace, before any other move, no insurance bet yet
+  const canInsurance = onFirstMove && state.activeHandIdx === 0 && state.playerHands.length === 1
+    && state.dealerCards[0].rank === 'A' && state.insuranceBet === 0 && state.balance >= Math.floor(hand.bet/2);
+  document.getElementById('btn-insurance').disabled = !canInsurance;
+}
+
+function updateBettingControls() {
+  const isBetting = state.phase === 'betting';
+  // Use '' to defer to CSS (which applies display:contents in casino mode)
+  document.getElementById('betting').style.display = isBetting ? '' : 'none';
+  // Show "Nova rodada" button during gameOver so user can skip the auto-reset wait
+  const nextWrap = document.getElementById('next-round-wrap');
+  if (nextWrap) nextWrap.style.display = state.phase === 'gameOver' ? 'block' : 'none';
+  // Mark body as "in-round" only when the hand is paused waiting for the player —
+  // this is the only safe moment to abandon it via the leave-icon.
+  document.body.classList.toggle('in-round', state.phase === 'playerTurn');
+}
+
+// ==================== BETTING ====================
+function addChip(value) {
+  if (state.phase !== 'betting') return;
+  if (state.balance < value) {
+    setFeedback(t('msg_bet_chip_blocked'), '', 'wrong');
+    return;
+  }
+  if (state.bet + value > state.balance) {
+    setFeedback(t('msg_bet_too_high'), '', 'wrong');
+    return;
+  }
+  state.bet += value;
+  renderBet(true);  // pulse the bet chip when adding
+  updateButtons();
+  setFeedback(t('msg_current_bet') + state.bet + t('msg_current_bet_after'), '');
+}
+function clearBet() {
+  if (state.phase !== 'betting') return;
+  state.bet = 0;
+  renderBet();
+  updateButtons();
+  setFeedback(t('msg_place_bet'), '');
+}
+
+// ==================== GAME FLOW ====================
+function deal() {
+  if (state.phase !== 'betting' || state.bet <= 0 || state.bet > state.balance) return;
+
+  // Remember this bet for next round
+  try { localStorage.setItem('blackjack_lastBet', String(state.bet)); } catch(e) {}
+
+  // Reshuffle if shoe is low (less than 25% remaining)
+  if (state.shoe.length < 78) {
+    state.shoe = makeShoe(6);
+    setMessage(t('msg_shuffled'));
+  }
+
+  // Deduct bet, set up empty hands
+  state.balance -= state.bet;
+  state.dealerCards = [];
+  state.playerHands = [{ cards: [], bet: state.bet, finished: false, doubled: false, surrendered: false, isSplitAces: false }];
+  state.insuranceBet = 0;
+  state.activeHandIdx = 0;
+  state.lastStrategyMsg = '';
+  state.lastStrategyType = '';
+
+  // Transition to dealing phase (blocks player input until cards are out)
+  state.phase = 'dealing';
+  renderBalance();
+  renderDealer(true);
+  renderPlayerHands();
+  updateBettingControls();
+  updateButtons();
+  setFeedback(t('msg_dealing'), '');
+
+  // Deal cards one at a time, alternating, like a real dealer
+  const steps = [
+    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); },
+    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); },
+    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); },
+    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); },
+  ];
+
+  let i = 0;
+  const dealNext = () => {
+    if (i >= steps.length) {
+      finishDealing();
+      return;
+    }
+    steps[i]();
+    i++;
+    setTimeout(dealNext, 750);
+  };
+  setTimeout(dealNext, 400);
+}
+
+function finishDealing() {
+  state.phase = 'playerTurn';
+
+  const playerBJ = isBlackjack(state.playerHands[0].cards);
+  const dealerShowsAce = state.dealerCards[0].rank === 'A';
+
+  if (dealerShowsAce) {
+    setFeedback(t('msg_your_turn'), t('msg_insurance_offer'), 'hint');
+  } else if (playerBJ) {
+    // Player BJ, no dealer ace possibility for BJ → instant win
+    setFeedback(t('msg_natural_bj'), t('msg_pays_3_2'), 'result-win');
+    finishHand();
+    return;
+  } else {
+    setFeedback(t('msg_your_turn'), t('msg_decide'));
+  }
+
+  updateButtons();
+}
+
+function action(act) {
+  if (state.phase !== 'playerTurn') return;
+  const hand = state.playerHands[state.activeHandIdx];
+  if (!hand || hand.finished) return;
+
+  // Strategy check (only count first move per hand, except for hit on running hand)
+  const dealerUp = state.dealerCards[0];
+  const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
+  const canDouble = onFirstMove && state.balance >= hand.bet;
+  const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+
+  // Insurance is a side bet, doesn't count for strategy
+  if (act === 'insurance') {
+    const insAmount = Math.floor(hand.bet / 2);
+    if (state.balance < insAmount) {
+      setFeedback(t('msg_your_turn'), t('msg_insurance_insufficient'), 'wrong');
+      return;
+    }
+    state.balance -= insAmount;
+    state.insuranceBet = insAmount;
+    renderBalance();
+    setFeedback(t('msg_your_turn'), t('msg_insurance_bought_a') + insAmount + t('msg_insurance_bought_b'), 'hint');
+    updateButtons();
+    return;
+  }
+
+  // Strategy correctness check (only on actions that count)
+  const optimalAction = basicStrategy(hand.cards, dealerUp, canDouble, canSplit, canSurrender);
+  const correct = (act === optimalAction);
+  state.stats.strategyTotal++;
+  if (correct) state.stats.strategyCorrect++;
+
+  // Snapshot pre-action context for the wrong-move modal
+  const cardsAtDecision = [...hand.cards];
+
+  // Save verdict for the round result feedback (only on errors — keep blank on correct)
+  if (correct) {
+    state.lastStrategyMsg = '';
+    state.lastStrategyType = '';
+  } else {
+    const optimalPrefix = currentLang === 'en' ? '✗ Optimal: '
+      : currentLang === 'es' ? '✗ Lo óptimo era '
+      : currentLang === 'tr' ? '✗ Doğrusu: '
+      : '✗ O ótimo seria ';
+    state.lastStrategyMsg = optimalPrefix + actionLabel(optimalAction) + '. ' + actionExplanation(optimalAction, cardsAtDecision, dealerUp);
+    state.lastStrategyType = 'wrong';
+  }
+
+  // Execute action
+  let stateMsg = 'Sua vez.';
+  if (act === 'hit') {
+    hand.cards.push(state.shoe.pop());
+    const total = handTotal(hand.cards);
+    if (total > 21) {
+      hand.finished = true;
+    } else if (total === 21) {
+      hand.finished = true;
+    }
+  } else if (act === 'stand') {
+    hand.finished = true;
+  } else if (act === 'double') {
+    if (state.balance < hand.bet) {
+      setFeedback(t('msg_your_turn'), t('msg_insufficient_double'), 'wrong');
+      state.stats.strategyTotal--;
+      if (correct) state.stats.strategyCorrect--;
+      return;
+    }
+    state.balance -= hand.bet;
+    hand.bet *= 2;
+    hand.doubled = true;
+    hand.cards.push(state.shoe.pop());
+    hand.finished = true;
+    renderBalance();
+  } else if (act === 'split') {
+    if (state.balance < hand.bet) {
+      setFeedback(t('msg_your_turn'), t('msg_insufficient_split'), 'wrong');
+      state.stats.strategyTotal--;
+      if (correct) state.stats.strategyCorrect--;
+      return;
+    }
+    state.balance -= hand.bet;
+    const card2 = hand.cards.pop();
+    const isAces = hand.cards[0].rank === 'A';
+    const newHand = { cards: [card2], bet: hand.bet, finished: false, doubled: false, surrendered: false, isSplitAces: isAces };
+    hand.isSplitAces = isAces;
+    hand.cards.push(state.shoe.pop());
+    newHand.cards.push(state.shoe.pop());
+    state.playerHands.push(newHand);
+    if (isAces) {
+      hand.finished = true;
+      newHand.finished = true;
+    }
+    renderBalance();
+  } else if (act === 'surrender') {
+    hand.surrendered = true;
+    hand.finished = true;
+  }
+
+  // Update visuals (no verdict feedback bar on correct moves)
+  if (correct) {
+    setFeedback(t('msg_your_turn'), '', '');
+  } else {
+    setFeedback(t('msg_your_turn'), state.lastStrategyMsg, 'wrong');
+  }
+  renderStats();
+  renderPlayerHands();
+
+  if (correct) {
+    // Move on silently
+    advanceHand();
+  } else {
+    // Show wrong-move teaching modal — defer game progression until dismissed
+    showWrongMoveModal(act, optimalAction, cardsAtDecision, dealerUp);
+    state.pendingAdvance = advanceHand;
+  }
+}
+
+// ==================== SCREEN FLASH ====================
+function flashScreen(kind) {
+  // kind: 'red' (wrong move), 'green' (win), 'lose' (round loss)
+  const cls = kind === 'green' ? 'green-flash-overlay'
+            : kind === 'lose' ? 'lose-flash-overlay'
+            : 'red-flash-overlay';
+  const flash = document.createElement('div');
+  flash.className = cls;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 700);
+}
+
+// ==================== WRONG-MOVE MODAL ====================
+function showWrongMoveModal(wrongAct, optimalAct, cardsBeforeAction, dealerCard) {
+  // Pause auto loop while modal is up
+  if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+  // Pause the auto-reset timer if any
+  if (state.resetTimer) { clearTimeout(state.resetTimer); state.resetTimer = null; }
+
+  // Error sound
+  playWrongSound();
+
+  // Red flash overlay
+  const flash = document.createElement('div');
+  flash.className = 'red-flash-overlay';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+
+  // Populate modal — actions, explanation, and the cards at decision time
+  document.getElementById('wrong-you-chose').textContent = actionLabel(wrongAct);
+  document.getElementById('wrong-should').textContent = actionLabel(optimalAct);
+  document.getElementById('wrong-explanation').textContent = actionExplanation(optimalAct, cardsBeforeAction, dealerCard);
+
+  // Render player's cards at the moment of the wrong decision
+  const playerCardsEl = document.getElementById('wrong-player-cards');
+  if (playerCardsEl) {
+    playerCardsEl.innerHTML = cardsBeforeAction.map(c => renderCard(c, false)).join('');
+  }
+  // Render dealer's visible card
+  const dealerCardEl = document.getElementById('wrong-dealer-card');
+  if (dealerCardEl) {
+    dealerCardEl.innerHTML = renderCard(dealerCard, false);
+  }
+
+  // Show overlay (fades in over the red flash)
+  setTimeout(() => {
+    document.getElementById('wrong-overlay').classList.add('show');
+  }, 200);
+}
+
+function dismissWrongMove() {
+  document.getElementById('wrong-overlay').classList.remove('show');
+  if (state.pendingAdvance) {
+    const fn = state.pendingAdvance;
+    state.pendingAdvance = null;
+    fn();
+  }
+  // If auto mode is on, resume the loop
+  if (state.autoMode) {
+    state.autoTimer = setTimeout(autoLoop, 300);
+  }
+}
+
+function advanceHand() {
+  // Move to next unfinished hand
+  while (state.activeHandIdx < state.playerHands.length && state.playerHands[state.activeHandIdx].finished) {
+    state.activeHandIdx++;
+  }
+  if (state.activeHandIdx >= state.playerHands.length) {
+    // All hands done → dealer's turn
+    dealerTurn();
+  } else {
+    renderPlayerHands();
+    updateButtons();
+  }
+}
+
+function dealerTurn() {
+  state.phase = 'dealerTurn';
+  renderPlayerHands();
+  updateButtons();
+
+  // Check if any hand is still alive (not busted, not surrendered, not BJ-handled)
+  const anyAlive = state.playerHands.some(h => {
+    const total = handTotal(h.cards);
+    return !h.surrendered && total <= 21;
+  });
+
+  if (!anyAlive) {
+    // All player hands lost or surrendered, no need for dealer to play
+    renderDealer(false);
+    finishHand();
+    return;
+  }
+
+  // Reveal dealer hole card
+  renderDealer(false);
+
+  // Dealer hits until 17+ (hits on soft 17)
+  function dealerStep() {
+    const total = handTotal(state.dealerCards);
+    const soft = isSoft(state.dealerCards);
+    if (total < 17 || (total === 17 && soft)) {
+      state.dealerCards.push(state.shoe.pop());
+      renderDealer(false);
+      setTimeout(dealerStep, 800);
+    } else {
+      finishHand();
+    }
+  }
+  setTimeout(dealerStep, 900);
+}
+
+function finishHand() {
+  state.phase = 'gameOver';
+  const dealerTotal = handTotal(state.dealerCards);
+  const dealerBJ = isBlackjack(state.dealerCards);
+  const dealerBust = dealerTotal > 21;
+
+  let totalWinnings = 0;
+  let messages = [];
+
+  // Resolve insurance
+  if (state.insuranceBet > 0) {
+    if (dealerBJ) {
+      const insWin = state.insuranceBet * 3; // 2:1 plus original
+      totalWinnings += insWin;
+      messages.push(t('msg_insurance_paid') + (insWin - state.insuranceBet) + t('msg_insurance_paid_suf'));
+    } else {
+      messages.push(t('msg_insurance_lost') + state.insuranceBet);
+    }
+  }
+
+  // Resolve each hand
+  state.stats.hands += state.playerHands.length;
+  let handResults = [];
+  for (let i = 0; i < state.playerHands.length; i++) {
+    const h = state.playerHands[i];
+    const pt = handTotal(h.cards);
+    const playerBJ = isBlackjack(h.cards) && state.playerHands.length === 1; // BJ only on un-split hand
+    let result;
+
+    if (h.surrendered) {
+      // Player gets back half their bet
+      totalWinnings += Math.floor(h.bet / 2);
+      result = 'render';
+      state.stats.losses++;
+    } else if (pt > 21) {
+      result = 'bust';
+      state.stats.losses++;
+    } else if (playerBJ && !dealerBJ) {
+      // BJ pays 3:2
+      totalWinnings += h.bet + Math.floor(h.bet * 1.5);
+      result = 'blackjack';
+      state.stats.wins++;
+      state.stats.blackjacks++;
+    } else if (playerBJ && dealerBJ) {
+      totalWinnings += h.bet;
+      result = 'push';
+      state.stats.pushes++;
+    } else if (dealerBJ) {
+      result = 'dealer-bj';
+      state.stats.losses++;
+    } else if (dealerBust) {
+      totalWinnings += h.bet * 2;
+      result = 'win';
+      state.stats.wins++;
+    } else if (pt > dealerTotal) {
+      totalWinnings += h.bet * 2;
+      result = 'win';
+      state.stats.wins++;
+    } else if (pt < dealerTotal) {
+      result = 'lose';
+      state.stats.losses++;
+    } else {
+      totalWinnings += h.bet;
+      result = 'push';
+      state.stats.pushes++;
+    }
+    handResults.push({ idx: i, result, total: pt, bet: h.bet });
+  }
+
+  state.balance += totalWinnings;
+  renderBalance();
+
+  // Build result message
+  let summary;
+  if (state.playerHands.length === 1) {
+    const r = handResults[0];
+    if (r.result === 'blackjack') summary = t('msg_natural_bj') + ' ' + t('msg_pays_3_2');
+    else if (r.result === 'win') summary = t('msg_win_simple') + (dealerBust ? t('msg_dealer_busted') : '');
+    else if (r.result === 'push') summary = t('msg_push');
+    else if (r.result === 'lose') summary = t('msg_loss_simple');
+    else if (r.result === 'bust') summary = t('msg_busted');
+    else if (r.result === 'dealer-bj') summary = t('msg_dealer_bj');
+    else if (r.result === 'render') summary = t('msg_surrendered');
+  } else {
+    const wins = handResults.filter(r => r.result === 'win' || r.result === 'blackjack').length;
+    const losses = handResults.filter(r => r.result === 'lose' || r.result === 'bust' || r.result === 'dealer-bj').length;
+    const pushes = handResults.filter(r => r.result === 'push').length;
+    summary = `${t('msg_hands_summary')}${wins}W / ${losses}L / ${pushes}P${dealerBust ? t('msg_dealer_busted') : '.'}`;
+  }
+
+  if (messages.length > 0) summary += ' ' + messages.join('. ');
+
+  // Determine overall feedback type for the result line
+  const totalNetWin = totalWinnings - state.playerHands.reduce((s,h) => s + h.bet, 0) - state.insuranceBet;
+  let fbType = 'result-push';
+  if (totalNetWin > 0) fbType = 'result-win';
+  else if (totalNetWin < 0) fbType = 'result-loss';
+
+  // Show result on top line, preserved strategy verdict on bottom line
+  setFeedback(summary, state.lastStrategyMsg, fbType);
+
+  // Play result sound + screen flash
+  if (fbType === 'result-win') {
+    playWinSound();
+    flashScreen('green');
+  } else if (fbType === 'result-loss') {
+    playLoseSound();
+    flashScreen('lose');
+  } else if (fbType === 'result-push') {
+    playPushSound();
+  }
+
+  saveStats();
+  renderStats();
+  renderPlayerHands();
+  updateBettingControls();  // Show "Nova rodada" button immediately
+
+  // Check if player is broke
+  if (state.balance <= 0) {
+    setMessage(t('msg_no_chips'));
+    state.balance = 0;
+  } else {
+    setMessage(t('msg_skip_or_wait'));
+  }
+
+  // Auto-start next round only if setting is on AND not on mobile
+  if (state.resetTimer) clearTimeout(state.resetTimer);
+  if (autoStartEnabled && !isMobile()) {
+    state.resetTimer = setTimeout(() => { playNextRound(); }, 2500);
+  }
+}
+
+// Reset + auto-deal next round with the remembered bet
+function playNextRound() {
+  resetRound();
+  if (state.bet > 0 && state.bet <= state.balance) {
+    deal();
+  }
+}
+
+// Give up the current hand mid-game — forfeits all bets, returns to betting phase
+function giveUpHand() {
+  // Cancel any pending timers
+  if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+  if (state.resetTimer) { clearTimeout(state.resetTimer); state.resetTimer = null; }
+  // Close any open wrong-move modal
+  if (state.pendingAdvance) {
+    state.pendingAdvance = null;
+    document.getElementById('wrong-overlay').classList.remove('show');
+  }
+  // Bet stays gone (already deducted from balance) — that's the cost of leaving
+  state.phase = 'betting';
+  state.dealerCards = [];
+  state.playerHands = [];
+  state.insuranceBet = 0;
+  state.activeHandIdx = 0;
+  state.bet = 0;
+  state.lastStrategyMsg = '';
+  state.lastStrategyType = '';
+
+  document.getElementById('dealer-hand').innerHTML = '';
+  document.getElementById('dealer-status').textContent = '';
+  document.getElementById('dealer-status').className = 'hand-status';
+  renderPlayerHands();
+  renderBet();
+  renderBalance();
+  updateButtons();
+  updateBettingControls();
+  setFeedback(t('msg_place_bet'), '');
+}
+
+// Click on the bet chip = leave the hand. Only allowed when the game is "paused" —
+// during the player's turn (waiting for input) or after the round is over.
+// NOT during dealing or dealerTurn (cards in motion → would crash).
+function changeBetClicked() {
+  if (state.phase !== 'playerTurn') return;
+  giveUpHand();
+}
+
+// Reset round and go back to chip selection (don't auto-deal — let the user pick a new bet)
+function goToBetting() {
+  if (state.resetTimer) { clearTimeout(state.resetTimer); state.resetTimer = null; }
+  resetRound();
+  // Clear the pre-filled bet so user can choose fresh
+  state.bet = 0;
+  renderBet();
+  updateButtons();
+  setFeedback(t('msg_place_bet'), '');
+}
+
+function resetRound() {
+  if (state.resetTimer) { clearTimeout(state.resetTimer); state.resetTimer = null; }
+  if (state.phase !== 'gameOver') return;
+
+  state.phase = 'betting';
+  state.dealerCards = [];
+  state.playerHands = [];
+  state.insuranceBet = 0;
+  state.activeHandIdx = 0;
+
+  // Pre-fill bet with last bet (if affordable), otherwise zero
+  const lastBet = parseInt(localStorage.getItem('blackjack_lastBet')) || 0;
+  if (lastBet > 0 && lastBet <= state.balance) {
+    state.bet = lastBet;
+  } else {
+    state.bet = 0;
+  }
+
+  if (state.balance <= 0) {
+    state.balance = 1000;
+    state.bet = 0;
+    setFeedback(t('msg_place_bet_short'), t('msg_balance_zero'), 'hint');
+    saveStats();
+    renderBalance();
+  } else {
+    const betMsg = state.bet > 0
+      ? (currentLang === 'en' ? 'Repeat bet: ' + state.bet
+        : currentLang === 'es' ? 'Apuesta repetida: ' + state.bet
+        : currentLang === 'tr' ? 'Tekrar bahis: ' + state.bet
+        : 'Aposta repetida: ' + state.bet)
+      : t('msg_place_bet_short');
+    setFeedback(betMsg, state.lastStrategyMsg, '');
+  }
+
+  document.getElementById('dealer-hand').innerHTML = '';
+  document.getElementById('dealer-status').textContent = '';
+  document.getElementById('dealer-status').className = 'hand-status';
+  renderPlayerHands();
+  renderBet();
+  updateBettingControls();
+  updateButtons();
+}
+
+function showHint() {
+  if (state.phase !== 'playerTurn') return;
+  const hand = state.playerHands[state.activeHandIdx];
+  if (!hand) return;
+  const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
+  const canDouble = onFirstMove && state.balance >= hand.bet;
+  const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+  const optimal = basicStrategy(hand.cards, state.dealerCards[0], canDouble, canSplit, canSurrender);
+  const explanation = actionExplanation(optimal, hand.cards, state.dealerCards[0]);
+  setFeedback(t('msg_your_turn'), t('msg_hint_prefix') + actionLabel(optimal) + '. ' + explanation, 'hint');
+}
+
+function toggleRules() {
+  document.getElementById('rules-modal').classList.toggle('show');
+}
+
+function toggleAbout() {
+  document.getElementById('about-modal').classList.toggle('show');
+}
+
+function restartGame() {
+  state.balance = 1000;
+  state.bet = 0;
+  state.insuranceBet = 0;
+  state.dealerCards = [];
+  state.playerHands = [];
+  state.activeHandIdx = 0;
+  state.phase = 'betting';
+  state.lastStrategyMsg = '';
+  state.lastStrategyType = '';
+  state.shoe = makeShoe(6);
+  saveStats();
+  document.getElementById('dealer-hand').innerHTML = '';
+  document.getElementById('dealer-status').textContent = '';
+  renderBalance();
+  renderBet();
+  renderPlayerHands();
+  updateButtons();
+  updateBettingControls();
+  setFeedback(t('msg_game_restarted'), t('msg_place_bet'), 'hint');
+}
+
+// Casino mode is now the default and only mode — toggle removed
+
+// ==================== SOUNDS ====================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { return null; }
+  }
+  // Resume if suspended (browsers block audio until first user gesture)
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.12, delay = 0) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const start = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + duration + 0.05);
+}
+
+function playWinSound() {
+  // C5 → E5 → G5 ascending major chord
+  playTone(523.25, 0.18, 'sine', 0.14, 0);
+  playTone(659.25, 0.18, 'sine', 0.14, 0.10);
+  playTone(783.99, 0.35, 'sine', 0.14, 0.20);
+}
+
+function playLoseSound() {
+  // E4 → C4 descending minor feel
+  playTone(329.63, 0.22, 'sine', 0.11, 0);
+  playTone(261.63, 0.40, 'sine', 0.11, 0.18);
+}
+
+function playPushSound() {
+  // Single neutral tone
+  playTone(440, 0.18, 'sine', 0.08, 0);
+}
+
+function playWrongSound() {
+  // Sharp double buzz
+  playTone(196, 0.08, 'square', 0.07, 0);
+  playTone(165, 0.16, 'square', 0.07, 0.07);
+}
+
+// ==================== AUTO MODE (robot with perfect basic strategy) ====================
+function toggleAutoMode() {
+  state.autoMode = !state.autoMode;
+  const menuAuto = document.getElementById('menu-auto');
+  // Only update the <span> text — keep the SVG icon intact
+  if (menuAuto) {
+    const span = menuAuto.querySelector('span');
+    if (span) span.textContent = state.autoMode ? t('menu_auto_pause') : t('menu_auto');
+  }
+  if (state.autoMode) {
+    document.body.classList.add('auto-active');
+    autoLoop();
+  } else {
+    document.body.classList.remove('auto-active');
+    if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+    updateButtons();
+    updateBettingControls();
+  }
+}
+
+function autoLoop() {
+  if (!state.autoMode) return;
+  if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+  // Pause if a wrong-move modal is open
+  if (state.pendingAdvance) {
+    state.autoTimer = setTimeout(autoLoop, 400);
+    return;
+  }
+
+  const phase = state.phase;
+
+  if (phase === 'betting') {
+    // Place last bet (or default 50) if not already set
+    if (state.bet === 0) {
+      const lastBet = parseInt(localStorage.getItem('blackjack_lastBet')) || 50;
+      const targetBet = Math.min(lastBet, state.balance);
+      if (targetBet > 0) {
+        state.bet = targetBet;
+        renderBet();
+      }
+    }
+    if (state.bet > 0 && state.bet <= state.balance) {
+      // Brief pause then deal
+      state.autoTimer = setTimeout(() => {
+        deal();
+        state.autoTimer = setTimeout(autoLoop, 700);
+      }, 500);
+    } else {
+      // No money to bet — should not happen since balance auto-resets
+      state.autoTimer = setTimeout(autoLoop, 500);
+    }
+    return;
+  }
+
+  if (phase === 'playerTurn') {
+    const hand = state.playerHands[state.activeHandIdx];
+    if (!hand || hand.finished) {
+      state.autoTimer = setTimeout(autoLoop, 250);
+      return;
+    }
+    const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
+    const canDouble = onFirstMove && state.balance >= hand.bet;
+    const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
+    const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+    const optimal = basicStrategy(hand.cards, state.dealerCards[0], canDouble, canSplit, canSurrender);
+    state.autoTimer = setTimeout(() => {
+      action(optimal);
+      // After action, phase may change. Wait for things to settle.
+      state.autoTimer = setTimeout(autoLoop, 800);
+    }, 900);
+    return;
+  }
+
+  if (phase === 'dealerTurn') {
+    // Wait for dealer to finish drawing
+    state.autoTimer = setTimeout(autoLoop, 400);
+    return;
+  }
+
+  if (phase === 'gameOver') {
+    // Wait briefly so user can read result, then start next round
+    state.autoTimer = setTimeout(() => {
+      if (!state.autoMode) return;
+      resetRound();
+      state.autoTimer = setTimeout(autoLoop, 600);
+    }, 1800);
+    return;
+  }
+
+  // fallback
+  state.autoTimer = setTimeout(autoLoop, 400);
+}
+
+// ==================== GESTURES ====================
+// Real-casino-style gestures on the felt:
+//   tap            → Hit
+//   horizontal swipe → Stand
+//   double tap     → Double down
+function setupGestures() {
+  const table = document.querySelector('.table');
+  if (!table) return;
+
+  let gesture = null;          // { x, y, time }
+  let lastTapTime = 0;
+  let pendingTapTimer = null;
+
+  const TAP_MAX_DIST = 12;     // px — movement under this counts as a tap
+  const TAP_MAX_TIME = 350;    // ms
+  const SWIPE_MIN_DIST = 60;   // px — minimum horizontal distance for stand
+  const DOUBLE_TAP_WINDOW = 320; // ms
+
+  const isControl = (target) => target.closest('button, .chip, input, .modal-overlay');
+
+  const flashTable = (color) => {
+    table.style.transition = 'box-shadow 0.15s';
+    table.style.boxShadow = `inset 0 0 60px rgba(0,0,0,0.4), 0 0 0 3px ${color}, 0 8px 24px rgba(0,0,0,0.5)`;
+    setTimeout(() => {
+      table.style.boxShadow = '';
+    }, 200);
+  };
+
+  const tryAction = (act, color) => {
+    if (state.phase !== 'playerTurn') return;
+    const btn = document.getElementById('btn-' + act);
+    if (btn && btn.disabled) return;
+    flashTable(color);
+    action(act);
+  };
+
+  // Tap during gameOver = skip wait & start new round (with last bet pre-filled)
+  const tapForNewRound = () => {
+    if (state.phase !== 'gameOver') return false;
+    flashTable('rgba(212,175,55,0.7)');
+    resetRound();
+    // If we have a pre-filled bet that's affordable, auto-deal
+    if (state.bet > 0 && state.bet <= state.balance) {
+      setTimeout(() => deal(), 200);
+    }
+    return true;
+  };
+
+  // Gestures only activate in casino mode (where buttons are hidden)
+  // and not while the wrong-move modal is open
+  const gesturesEnabled = () => document.body.classList.contains('casino-mode') && !state.autoMode && !state.pendingAdvance;
+
+  table.addEventListener('mousedown', (e) => {
+    if (!gesturesEnabled()) return;
+    if (isControl(e.target)) return;
+    gesture = { x: e.clientX, y: e.clientY, time: Date.now() };
+  });
+
+  table.addEventListener('mouseup', (e) => {
+    if (!gesture) return;
+    if (isControl(e.target)) { gesture = null; return; }
+
+    const dx = e.clientX - gesture.x;
+    const dy = e.clientY - gesture.y;
+    const dist = Math.hypot(dx, dy);
+    const dt = Date.now() - gesture.time;
+    gesture = null;
+
+    // Horizontal swipe → Stand (must be mostly horizontal)
+    if (Math.abs(dx) >= SWIPE_MIN_DIST && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (pendingTapTimer) { clearTimeout(pendingTapTimer); pendingTapTimer = null; }
+      lastTapTime = 0;
+      tryAction('stand', 'rgba(255,107,107,0.7)');
+      return;
+    }
+
+    // Tap (small movement, quick)
+    if (dist <= TAP_MAX_DIST && dt <= TAP_MAX_TIME) {
+      // Tap during gameOver = quick new round
+      if (state.phase === 'gameOver') {
+        if (pendingTapTimer) { clearTimeout(pendingTapTimer); pendingTapTimer = null; }
+        lastTapTime = 0;
+        tapForNewRound();
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTapTime < DOUBLE_TAP_WINDOW) {
+        // Double tap → Double down (fallback to hit if not allowed)
+        if (pendingTapTimer) { clearTimeout(pendingTapTimer); pendingTapTimer = null; }
+        lastTapTime = 0;
+        if (state.phase === 'playerTurn') {
+          const btn = document.getElementById('btn-double');
+          if (btn && !btn.disabled) {
+            tryAction('double', 'rgba(212,175,55,0.8)');
+          } else {
+            tryAction('hit', 'rgba(78,127,255,0.7)');
+          }
+        }
+      } else {
+        // Single tap — wait briefly to detect double tap
+        lastTapTime = now;
+        if (pendingTapTimer) clearTimeout(pendingTapTimer);
+        pendingTapTimer = setTimeout(() => {
+          pendingTapTimer = null;
+          if (Date.now() - lastTapTime >= DOUBLE_TAP_WINDOW - 10) {
+            tryAction('hit', 'rgba(78,127,255,0.7)');
+          }
+        }, DOUBLE_TAP_WINDOW);
+      }
+    }
+  });
+
+  // Cancel gesture if mouse leaves table mid-gesture
+  table.addEventListener('mouseleave', () => { gesture = null; });
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+//   Space        → Distribuir / Nova rodada
+//   ↑ (up)       → Pedir (Hit)
+//   ↓ (down)     → Parar (Stand)
+//   ← (left)     → Dobrar (Double)
+//   → (right)    → Dividir (Split)
+//   Enter/Esc    → Fecha popup de erro
+function setupKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    // Skip when typing in a real input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // Wrong-move modal: Enter / Space / Escape dismisses it
+    if (state.pendingAdvance) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault();
+        dismissWrongMove();
+      }
+      return;
+    }
+
+    // Rules modal: Escape closes
+    const rulesModal = document.getElementById('rules-modal');
+    if (rulesModal && rulesModal.classList.contains('show')) {
+      if (e.key === 'Escape') { e.preventDefault(); toggleRules(); }
+      return;
+    }
+
+    // Robot mode locks input
+    if (state.autoMode) return;
+
+    const key = e.key;
+
+    // Arrows: only during player turn
+    if (state.phase !== 'playerTurn') return;
+
+    const tryBtn = (id) => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.disabled) btn.click();
+    };
+
+    if (key === 'ArrowUp') { e.preventDefault(); tryBtn('btn-hit'); }
+    else if (key === 'ArrowDown') { e.preventDefault(); tryBtn('btn-stand'); }
+    else if (key === 'ArrowLeft') { e.preventDefault(); tryBtn('btn-double'); }
+    else if (key === 'ArrowRight') { e.preventDefault(); tryBtn('btn-split'); }
+  });
+}
+
+// ==================== INIT ====================
+function init() {
+  loadStats();
+  state.shoe = makeShoe(6);
+  // Pre-fill bet from last saved bet
+  const lastBet = parseInt(localStorage.getItem('blackjack_lastBet')) || 0;
+  if (lastBet > 0 && lastBet <= state.balance) state.bet = lastBet;
+  // Restore collapsible panel states
+  try {
+    // Stats widget always starts collapsed (it's a floating button) — user taps to expand
+    document.getElementById('stats-panel').classList.add('collapsed');
+  } catch(e) {}
+  // Apply current language
+  applyTranslations();
+  renderBalance();
+  renderStats();
+  renderBet();
+  renderPlayerHands();
+  setFeedback(t('msg_place_bet'), '');
+  updateButtons();
+  updateBettingControls();
+  setupKeyboard();
+}
+
+init();
+</script>
+
+</body>
+</html>
