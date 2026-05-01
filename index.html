@@ -3353,6 +3353,7 @@ function addChip(value) {
     return;
   }
   state.bet += value;
+  playChipSound();
   renderBet(true);  // pulse the bet chip when adding
   updateButtons();
   setFeedback(t('msg_current_bet') + state.bet + t('msg_current_bet_after'), '');
@@ -3398,10 +3399,10 @@ function deal() {
 
   // Deal cards one at a time, alternating, like a real dealer
   const steps = [
-    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); },
-    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); },
-    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); },
-    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); },
+    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); playCardSound(); },
+    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); playCardSound(); },
+    () => { state.playerHands[0].cards.push(state.shoe.pop()); renderPlayerHands(); playCardSound(); },
+    () => { state.dealerCards.push(state.shoe.pop()); renderDealer(true); playCardSound(); },
   ];
 
   let i = 0;
@@ -3490,6 +3491,7 @@ function action(act) {
   let stateMsg = 'Sua vez.';
   if (act === 'hit') {
     hand.cards.push(state.shoe.pop());
+    playCardSound();
     const total = handTotal(hand.cards);
     if (total > 21) {
       hand.finished = true;
@@ -3511,6 +3513,8 @@ function action(act) {
     hand.cards.push(state.shoe.pop());
     hand.finished = true;
     renderBalance();
+    playDoubleSplitSound();
+    setTimeout(playCardSound, 100);
   } else if (act === 'split') {
     if (state.balance < hand.bet) {
       setFeedback(t('msg_your_turn'), t('msg_insufficient_split'), 'wrong');
@@ -3531,6 +3535,9 @@ function action(act) {
       newHand.finished = true;
     }
     renderBalance();
+    playDoubleSplitSound();
+    setTimeout(playCardSound, 100);
+    setTimeout(playCardSound, 220);
   } else if (act === 'surrender') {
     hand.surrendered = true;
     hand.finished = true;
@@ -3652,6 +3659,7 @@ function dealerTurn() {
 
   // Reveal dealer hole card
   renderDealer(false);
+  playDealerRevealSound();
 
   // Dealer hits until 17+ (hits on soft 17)
   function dealerStep() {
@@ -3660,6 +3668,7 @@ function dealerTurn() {
     if (total < 17 || (total === 17 && soft)) {
       state.dealerCards.push(state.shoe.pop());
       renderDealer(false);
+      playCardSound();
       setTimeout(dealerStep, 800);
     } else {
       finishHand();
@@ -3771,10 +3780,16 @@ function finishHand() {
 
   // Play result sound + screen flash
   if (fbType === 'result-win') {
-    playWinSound();
+    // Special celebratory sound on natural blackjack
+    const wasBJ = state.playerHands.length === 1 && handResults[0] && handResults[0].result === 'blackjack';
+    if (wasBJ) playBlackjackSound();
+    else playWinSound();
     flashScreen('green');
   } else if (fbType === 'result-loss') {
-    playLoseSound();
+    // Distinct sound on bust vs regular loss
+    const wasBust = state.playerHands.length === 1 && handResults[0] && handResults[0].result === 'bust';
+    if (wasBust) playBustSound();
+    else playLoseSound();
     flashScreen('lose');
   } else if (fbType === 'result-push') {
     playPushSound();
@@ -3948,16 +3963,46 @@ function restartGame() {
 
 // ==================== SOUNDS ====================
 let audioCtx = null;
+let audioUnlocked = false;
+
 function getAudioCtx() {
   if (!audioCtx) {
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     } catch (e) { return null; }
   }
-  // Resume if suspended (browsers block audio until first user gesture)
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+
+// iOS Safari (and some Android browsers) require AudioContext.resume() to be called
+// SYNCHRONOUSLY inside a user-gesture event handler. Once unlocked, sounds triggered
+// from setTimeout (e.g. dealer finishing a hand) work correctly.
+function unlockAudioOnFirstTouch() {
+  if (audioUnlocked) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  // Play a silent tone to fully wake the audio pipeline on iOS
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch (e) {}
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => { audioUnlocked = true; }).catch(() => {});
+  } else {
+    audioUnlocked = true;
+  }
+}
+
+// Attach to the earliest possible user gestures — runs once per gesture type
+['touchstart','mousedown','keydown'].forEach(ev => {
+  document.addEventListener(ev, unlockAudioOnFirstTouch, { passive: true });
+});
 
 function playTone(freq, duration, type = 'sine', volume = 0.12, delay = 0) {
   const ctx = getAudioCtx();
@@ -3998,6 +4043,46 @@ function playWrongSound() {
   // Sharp double buzz
   playTone(196, 0.08, 'square', 0.07, 0);
   playTone(165, 0.16, 'square', 0.07, 0.07);
+}
+
+function playCardSound() {
+  // Quick "flick" — short high tick
+  playTone(1800, 0.025, 'square', 0.04, 0);
+  playTone(1100, 0.045, 'sine', 0.03, 0.015);
+}
+
+function playChipSound() {
+  // Coin clink — two quick metallic tones
+  playTone(2200, 0.04, 'sine', 0.07, 0);
+  playTone(1600, 0.05, 'sine', 0.05, 0.025);
+}
+
+function playBlackjackSound() {
+  // Celebration arpeggio: C5 → E5 → G5 → C6 → E6
+  playTone(523.25, 0.10, 'sine', 0.14, 0);
+  playTone(659.25, 0.10, 'sine', 0.14, 0.08);
+  playTone(783.99, 0.10, 'sine', 0.14, 0.16);
+  playTone(1046.50, 0.15, 'sine', 0.14, 0.24);
+  playTone(1318.51, 0.40, 'sine', 0.14, 0.34);
+}
+
+function playBustSound() {
+  // Descending sawtooth — disappointment
+  playTone(220, 0.14, 'sawtooth', 0.10, 0);
+  playTone(165, 0.18, 'sawtooth', 0.09, 0.10);
+  playTone(110, 0.30, 'sawtooth', 0.08, 0.20);
+}
+
+function playDoubleSplitSound() {
+  // Two-tone "commit" sound
+  playTone(440, 0.06, 'triangle', 0.08, 0);
+  playTone(660, 0.10, 'triangle', 0.08, 0.05);
+}
+
+function playDealerRevealSound() {
+  // Subtle reveal click
+  playTone(1500, 0.03, 'sine', 0.05, 0);
+  playTone(900, 0.05, 'sine', 0.04, 0.02);
 }
 
 // ==================== AUTO MODE (robot with perfect basic strategy) ====================
