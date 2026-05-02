@@ -498,6 +498,362 @@
     color: #fff;
   }
   .modal-close-x svg { width: 16px; height: 16px; }
+
+  /* ============ LIVE TABLE HELPER (fullscreen, prob. calc style) ============ */
+  .helper-screen {
+    position: fixed;
+    inset: 0;
+    background: #0c0f14;
+    z-index: 400;
+    display: none;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  }
+  .helper-screen.show { display: block; }
+  .helper-screen-inner {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px 14px 40px;
+    color: #cbd5e0;
+  }
+  .helper-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid #1e2530;
+    color: #4a5568;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 401;
+  }
+  .helper-close svg { width: 14px; height: 14px; }
+  .helper-close:hover { color: #cbd5e0; border-color: #3b4a63; }
+
+  .helper-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .helper-brand {
+    color: #2d3748;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .helper-reset-btn {
+    background: #1e2530;
+    border: 1px solid #3b4a63;
+    border-radius: 8px;
+    color: #cbd5e0;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 22px;
+    margin-right: 44px;  /* shift left, away from the close X corner */
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .helper-reset-btn:hover {
+    background: #2d3748;
+    border-color: #5a6578;
+    color: #fff;
+  }
+
+  .helper-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .helper-pill {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .helper-pill.active {
+    background: #1e2530;
+    border-color: #3b4a63;
+    cursor: default;
+  }
+  .helper-pill .pill-label {
+    font-size: 9px;
+    color: #2d3748;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .helper-pill .pill-value {
+    font-size: 18px;
+    color: #2d3748;
+    font-weight: 700;
+  }
+  .helper-pill .pill-value.filled { color: #e2e8f0; }
+
+  .helper-advice {
+    padding: 16px 20px;
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #2d3748;
+    letter-spacing: 1px;
+  }
+  .helper-advice.filled {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .helper-advice .advice-label {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .helper-advice .advice-target {
+    font-size: 12px;
+    color: #cbd5e0;
+    margin-top: 3px;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+  }
+  .helper-advice .advice-target strong {
+    color: #d4af74;
+    font-weight: 700;
+  }
+  .helper-split-btn {
+    margin-top: 8px;
+    background: rgba(212, 165, 116, 0.12);
+    border: 1px solid rgba(212, 165, 116, 0.4);
+    border-radius: 6px;
+    color: #d4a574;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .helper-split-btn:hover {
+    background: rgba(212, 165, 116, 0.22);
+    border-color: rgba(212, 165, 116, 0.6);
+  }
+  .helper-advice .advice-reason {
+    font-size: 12px;
+    color: #4a5568;
+    margin-top: 3px;
+    letter-spacing: 0;
+    line-height: 1.45;
+  }
+  .helper-advice .advice-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Win probability bars */
+  .helper-probs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .prob-item {
+    flex: 1;
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .prob-label {
+    font-size: 9px;
+    color: #4a5568;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .prob-value {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .prob-value.win  { color: #7ab98b; }
+  .prob-value.push { color: #9aa3b0; }
+  .prob-value.loss { color: #e87b7b; }
+  .prob-bar {
+    height: 3px;
+    background: #1e2530;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .prob-fill {
+    height: 100%;
+    transition: width 0.3s;
+  }
+  .prob-fill.win  { background: #7ab98b; }
+  .prob-fill.push { background: #9aa3b0; }
+  .prob-fill.loss { background: #e87b7b; }
+
+  .helper-picker-section { padding: 0; }
+
+  /* Split view */
+  .split-dealer-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .split-dealer-label {
+    font-size: 10px;
+    color: #4a5568;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .split-dealer-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #cbd5e0;
+    margin-right: auto;
+  }
+  .split-exit-btn {
+    background: transparent;
+    border: 1px solid #1e2530;
+    border-radius: 6px;
+    color: #4a5568;
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-family: inherit;
+  }
+  .split-exit-btn:hover { color: #cbd5e0; border-color: #3b4a63; }
+
+  .split-hands-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .split-hand-block {
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 10px;
+    padding: 12px;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .split-hand-block.active {
+    border-color: #3b4a63;
+    background: #161a23;
+  }
+  .split-hand-head {
+    font-size: 10px;
+    color: #4a5568;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .split-pills {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .split-pills .helper-pill { flex: 0 0 auto; min-width: 50px; padding: 6px 4px; }
+  .split-advice {
+    background: #0c0f14;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .split-advice.empty {
+    text-align: center;
+    color: #2d3748;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .split-picker { padding: 0; }
+
+  .helper-add-card {
+    width: 100%;
+    padding: 14px;
+    background: rgba(122, 185, 139, 0.10);
+    border: 1px solid rgba(122, 185, 139, 0.3);
+    border-radius: 8px;
+    color: #7ab98b;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: all 0.12s;
+  }
+  .helper-add-card:hover {
+    background: rgba(122, 185, 139, 0.18);
+    border-color: rgba(122, 185, 139, 0.5);
+  }
+  .helper-picker-label {
+    font-size: 10px;
+    color: #2d3748;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .helper-picker-grid {
+    display: grid;
+    gap: 6px;
+  }
+  .helper-grid-numbers { grid-template-columns: repeat(3, 1fr); }
+  .helper-grid-letters { grid-template-columns: repeat(4, 1fr); }
+  .helper-picker-divider {
+    height: 1px;
+    background: #1e2530;
+    margin: 10px 0;
+  }
+  .helper-picker-grid button {
+    padding: 13px 0;
+    background: #13171f;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    color: #cbd5e0;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .helper-picker-grid button:hover,
+  .helper-picker-grid button:active {
+    background: #1e2530;
+    border-color: #3b4a63;
+  }
+
   .modal h2 {
     color: #d4af37;
     margin-bottom: 16px;
@@ -1589,6 +1945,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
         <span data-i18n="menu_auto">Robô Auto</span>
       </button>
+      <button onclick="toggleHelper(); closeMenu()" id="menu-helper">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+        <span data-i18n="menu_helper">Mesa Real</span>
+      </button>
       <button onclick="toggleAutoStartSetting(); closeMenu()" id="menu-autostart">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10"/></svg>
         <span data-i18n="menu_autostart">Auto-iniciar: ON</span>
@@ -1712,6 +2072,29 @@
   </div>
 
 
+</div>
+
+<!-- Live Table Helper — fullscreen, step-by-step card picker -->
+<div class="helper-screen" id="helper-screen">
+  <button class="helper-close" onclick="toggleHelper()" aria-label="Fechar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+
+  <div class="helper-screen-inner">
+    <div class="helper-top">
+      <span class="helper-brand">prob. calc</span>
+      <button class="helper-reset-btn" onclick="resetHelper()">↺ <span data-i18n="helper_new">nova</span></button>
+    </div>
+
+    <div id="helper-normal-view">
+      <div class="helper-pills" id="helper-pills"></div>
+      <div class="helper-advice" id="helper-advice"></div>
+      <div class="helper-probs" id="helper-probs" style="display:none;"></div>
+      <div class="helper-picker-section" id="helper-picker-section"></div>
+    </div>
+
+    <div id="helper-split-view" style="display:none;"></div>
+  </div>
 </div>
 
 <!-- About modal -->
@@ -2150,17 +2533,17 @@ function softAction(total, dv) {
 }
 
 function hardAction(total, dv) {
-  if (total >= 17) {
-    if (total === 17 && dv === 11) return 'Rs'; // H17: surrender 17 vs A
-    return 'S';
-  }
+  if (total >= 17) return 'S';  // standard basic strategy: stand on hard 17+
+
   if (total === 16) {
-    if (dv >= 9) return 'R';   // surrender vs 9, 10, A
+    // House rule: no surrender when dealer shows A. Surrender only vs 9, 10.
+    if (dv === 9 || dv === 10) return 'R';
     if (dv >= 7) return 'H';
     return 'S';                // 2-6
   }
   if (total === 15) {
-    if (dv === 10 || dv === 11) return 'R';
+    // House rule: no surrender vs A. Surrender only vs 10.
+    if (dv === 10) return 'R';
     if (dv >= 7) return 'H';
     return 'S';
   }
@@ -2592,6 +2975,15 @@ const I18N = {
     menu_autostart: 'Auto-iniciar: ON',
     menu_giveup: 'Sair da rodada',
     menu_about: 'Sobre',
+    menu_helper: 'Mesa Real',
+    helper_title: 'Mesa Real',
+    helper_subtitle: 'Digite suas 2 cartas + a do dealer',
+    helper_card1: 'Sua 1ª',
+    helper_card2: 'Sua 2ª',
+    helper_dealer: 'Dealer',
+    helper_hint: '1 = Ás · 2-10 = valor · J/Q/K = 10',
+    helper_clear: 'Limpar',
+    helper_new: 'nova',
     rules_close: 'Fechar',
     robot_playing: 'Robô jogando',
 
@@ -2687,6 +3079,15 @@ const I18N = {
     menu_autostart: 'Auto-start: ON',
     menu_giveup: 'Leave hand',
     menu_about: 'About',
+    menu_helper: 'Live Helper',
+    helper_title: 'Live Helper',
+    helper_subtitle: 'Type your 2 cards + dealer card',
+    helper_card1: 'Your 1st',
+    helper_card2: 'Your 2nd',
+    helper_dealer: 'Dealer',
+    helper_hint: '1 = Ace · 2-10 = value · J/Q/K = 10',
+    helper_clear: 'Clear',
+    helper_new: 'new',
     rules_close: 'Close',
     robot_playing: 'Robot playing',
 
@@ -2781,6 +3182,15 @@ const I18N = {
     menu_autostart: 'Auto-inicio: ON',
     menu_giveup: 'Salir de la ronda',
     menu_about: 'Acerca de',
+    menu_helper: 'Mesa en Vivo',
+    helper_title: 'Mesa en Vivo',
+    helper_subtitle: 'Escribe tus 2 cartas + la del dealer',
+    helper_card1: 'Tu 1ª',
+    helper_card2: 'Tu 2ª',
+    helper_dealer: 'Dealer',
+    helper_hint: '1 = As · 2-10 = valor · J/Q/K = 10',
+    helper_clear: 'Limpiar',
+    helper_new: 'nueva',
     rules_close: 'Cerrar',
     robot_playing: 'Robot jugando',
 
@@ -2875,6 +3285,15 @@ const I18N = {
     menu_autostart: 'Otomatik Başlat: ON',
     menu_giveup: 'Elden Ayrıl',
     menu_about: 'Hakkında',
+    menu_helper: 'Canlı Masa',
+    helper_title: 'Canlı Masa',
+    helper_subtitle: '2 kartını + kurpiyer kartını yaz',
+    helper_card1: '1. Kartın',
+    helper_card2: '2. Kartın',
+    helper_dealer: 'Kurpiyer',
+    helper_hint: '1 = As · 2-10 = değer · J/Q/K = 10',
+    helper_clear: 'Temizle',
+    helper_new: 'yeni',
     rules_close: 'Kapat',
     robot_playing: 'Robot oynuyor',
 
@@ -3036,6 +3455,7 @@ function applyTranslations() {
   if (typeof renderStats === 'function') renderStats();
   if (typeof renderBet === 'function') renderBet();
   if (typeof renderPlayerHands === 'function') renderPlayerHands();
+  if (typeof renderHelper === 'function') renderHelper();
 }
 
 function setLanguage(lang) {
@@ -3321,7 +3741,8 @@ function updateButtons() {
   const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
   document.getElementById('btn-split').disabled = !canSplit;
   // Surrender allowed: first move on first hand, no split done
-  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+  const dealerNotAce = state.dealerCards.length > 0 && state.dealerCards[0].rank !== 'A';
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0 && dealerNotAce;
   document.getElementById('btn-surrender').disabled = !canSurrender;
   // Insurance: only when dealer shows Ace, before any other move, no insurance bet yet
   const canInsurance = onFirstMove && state.activeHandIdx === 0 && state.playerHands.length === 1
@@ -3448,7 +3869,8 @@ function action(act) {
   const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
   const canDouble = onFirstMove && state.balance >= hand.bet;
   const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
-  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+  const dealerNotAce = state.dealerCards.length > 0 && state.dealerCards[0].rank !== 'A';
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0 && dealerNotAce;
 
   // Insurance is a side bet, doesn't count for strategy
   if (act === 'insurance') {
@@ -3923,7 +4345,8 @@ function showHint() {
   const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
   const canDouble = onFirstMove && state.balance >= hand.bet;
   const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
-  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+  const dealerNotAce = state.dealerCards.length > 0 && state.dealerCards[0].rank !== 'A';
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0 && dealerNotAce;
   const optimal = basicStrategy(hand.cards, state.dealerCards[0], canDouble, canSplit, canSurrender);
   const explanation = actionExplanation(optimal, hand.cards, state.dealerCards[0]);
   setFeedback(t('msg_your_turn'), t('msg_hint_prefix') + actionLabel(optimal) + '. ' + explanation, 'hint');
@@ -3935,6 +4358,588 @@ function toggleRules() {
 
 function toggleAbout() {
   document.getElementById('about-modal').classList.toggle('show');
+}
+
+// ==================== WIN PROBABILITY (Monte Carlo) ====================
+// Player can have N cards (current state). Simulate playing it out from here.
+function simulateOutcome(playerCards, dCard, iterations = 1500) {
+  let win = 0, push = 0, loss = 0;
+  for (let i = 0; i < iterations; i++) {
+    const r = simulateHandOnce(playerCards, dCard);
+    if (r === 'win') win++;
+    else if (r === 'push') push++;
+    else loss++;
+  }
+  return { win: win/iterations, push: push/iterations, loss: loss/iterations };
+}
+
+function simulateHandOnce(playerCards, dCard) {
+  const shoe = makeShoe(6);
+  const removeOne = (rank) => {
+    const idx = shoe.findIndex(c => c.rank === rank);
+    if (idx >= 0) shoe.splice(idx, 1);
+  };
+  for (const c of playerCards) removeOne(c.rank);
+  removeOne(dCard.rank);
+  for (let i = shoe.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shoe[i], shoe[j]] = [shoe[j], shoe[i]];
+  }
+
+  // Player plays from current state via basic strategy
+  let pCards = [...playerCards];
+  while (true) {
+    const total = handTotal(pCards);
+    if (total >= 21) break;
+    const onFirstMove = pCards.length === 2;
+    const action = basicStrategy(pCards, dCard, onFirstMove, false, false);
+    if (action === 'stand') break;
+    if (action === 'hit') {
+      pCards.push(shoe.pop());
+    } else if (action === 'double' && onFirstMove) {
+      pCards.push(shoe.pop());
+      break;
+    } else {
+      break;
+    }
+  }
+  const pTotal = handTotal(pCards);
+  if (pTotal > 21) return 'loss';
+
+  // Dealer (H17)
+  const dCards = [dCard, shoe.pop()];
+  while (true) {
+    const t = handTotal(dCards);
+    const soft = isSoft(dCards);
+    if (t > 21) return 'win';
+    if (t >= 18) break;
+    if (t === 17 && !soft) break;
+    dCards.push(shoe.pop());
+  }
+  const dTotal = handTotal(dCards);
+  if (dTotal > 21) return 'win';
+  if (pTotal > dTotal) return 'win';
+  if (pTotal < dTotal) return 'loss';
+  return 'push';
+}
+
+// ==================== LIVE TABLE HELPER (prob. calc style) ====================
+const HELPER_VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+// Player's hand is an array of card ranks. In split mode, we have two parallel hands.
+let helperState = {
+  cards: [], dealer: null, step: 'card',
+  // Split mode (active when user splits a pair)
+  splitMode: false,
+  splitHands: null,        // [{cards: [rank,...], step}, {cards, step}]
+  activeSplitHand: 0,
+};
+
+function toggleHelper() {
+  const screen = document.getElementById('helper-screen');
+  const wasShown = screen.classList.contains('show');
+  screen.classList.toggle('show');
+  if (!wasShown) resetHelper();
+}
+
+function resetHelper() {
+  helperState = {
+    cards: [], dealer: null, step: 'card',
+    splitMode: false, splitHands: null, activeSplitHand: 0,
+  };
+  renderHelper();
+}
+
+// Enter split mode: user has a pair, dealer is set, and strategy says SPLIT.
+// Each hand starts with one of the split cards; dealer carries over.
+function enterSplitMode() {
+  if (helperState.cards.length !== 2 || !helperState.dealer) return;
+  if (helperState.cards[0] !== helperState.cards[1]) return;
+  const splitRank = helperState.cards[0];
+  helperState.splitMode = true;
+  helperState.splitHands = [
+    { cards: [splitRank], step: 'card' },
+    { cards: [splitRank], step: 'card' },
+  ];
+  helperState.activeSplitHand = 0;
+  renderHelper();
+}
+
+function exitSplitMode() {
+  helperState.splitMode = false;
+  helperState.splitHands = null;
+  helperState.activeSplitHand = 0;
+  renderHelper();
+}
+
+function setActiveSplitHand(idx) {
+  if (!helperState.splitMode) return;
+  helperState.activeSplitHand = idx;
+  renderHelper();
+}
+
+function helperSplitAddCard(handIdx) {
+  if (!helperState.splitMode) return;
+  const hand = helperState.splitHands[handIdx];
+  const total = handTotal(hand.cards.map(helperRankToCard));
+  if (total >= 21) return;
+  hand.step = 'card';
+  helperState.activeSplitHand = handIdx;
+  renderHelper();
+}
+
+// Re-split: when a split hand becomes a new pair (e.g. 8,8 split → got another 8 → 8,8 again).
+// Most casinos allow up to 4 hands total.
+const MAX_SPLIT_HANDS = 4;
+function reSplitHand(handIdx) {
+  if (!helperState.splitMode) return;
+  const hand = helperState.splitHands[handIdx];
+  if (hand.cards.length !== 2 || hand.cards[0] !== hand.cards[1]) return;
+  if (helperState.splitHands.length >= MAX_SPLIT_HANDS) return;
+  const splitRank = hand.cards[0];
+  // Replace current hand with single card and insert a new hand right after
+  hand.cards = [splitRank];
+  hand.step = 'card';
+  helperState.splitHands.splice(handIdx + 1, 0, { cards: [splitRank], step: 'card' });
+  helperState.activeSplitHand = handIdx;
+  renderHelper();
+}
+
+function editSplitHandCard(handIdx, cardIdx) {
+  if (!helperState.splitMode) return;
+  const hand = helperState.splitHands[handIdx];
+  hand.cards = hand.cards.slice(0, cardIdx);
+  hand.step = 'card';
+  helperState.activeSplitHand = handIdx;
+  renderHelper();
+}
+
+function helperPickValue(rank) {
+  // Split mode routing: card goes to the active sub-hand
+  if (helperState.splitMode) {
+    const idx = helperState.activeSplitHand;
+    const hand = helperState.splitHands[idx];
+    if (hand.step !== 'card') return;
+    hand.cards.push(rank);
+    if (hand.cards.length === 2) {
+      hand.step = 'done';
+      // Find ANY hand (across all split hands) that still needs its 2nd card
+      const nextIdx = helperState.splitHands.findIndex(h => h.cards.length < 2);
+      if (nextIdx !== -1) {
+        helperState.activeSplitHand = nextIdx;
+        helperState.splitHands[nextIdx].step = 'card';
+      }
+    } else if (hand.cards.length > 2) {
+      hand.step = 'done';
+    }
+    renderHelper();
+    return;
+  }
+
+  if (helperState.step === 'card') {
+    helperState.cards.push(rank);
+    // Real-table dealing order: C1 → D → C2.
+    if (!helperState.dealer) {
+      // After C1 (or any time dealer is missing), go to dealer
+      helperState.step = 'dealer';
+    } else if (helperState.cards.length < 2) {
+      // Dealer already set but still need C2 — stay on card
+      helperState.step = 'card';
+    } else {
+      // All required slots filled
+      helperState.step = 'done';
+    }
+  } else if (helperState.step === 'dealer') {
+    helperState.dealer = rank;
+    // After dealer pick, if we still need C2, go back to card step
+    if (helperState.cards.length < 2) {
+      helperState.step = 'card';
+    } else {
+      helperState.step = 'done';
+    }
+  }
+  renderHelper();
+}
+
+// `which` can be: 'd' (dealer), or a card index (number 0..N-1)
+function helperEditPill(which) {
+  if (which === 'd') {
+    helperState.dealer = null;
+    helperState.step = 'dealer';
+  } else if (typeof which === 'number') {
+    // Truncate cards from this index onward (so hit history is reset too)
+    helperState.cards = helperState.cards.slice(0, which);
+    if (helperState.cards.length < 2) {
+      helperState.step = 'card';
+    } else {
+      helperState.step = helperState.dealer ? 'done' : 'dealer';
+    }
+  }
+  renderHelper();
+}
+
+// Add another player card (for hit/double scenarios after initial decision)
+function helperAddCard() {
+  if (helperState.step !== 'done') return;
+  if (helperState.cards.length === 0) return;
+  const total = handTotal(helperState.cards.map(helperRankToCard));
+  if (total >= 21) return; // can't hit if 21 or busted
+  helperState.step = 'card';
+  renderHelper();
+}
+
+function helperRankToCard(rank) {
+  return { rank, suit: '♠', color: 'black' };
+}
+
+function helperHandTotal() {
+  if (!helperState.p1 || !helperState.p2) return null;
+  return handTotal([helperRankToCard(helperState.p1), helperRankToCard(helperState.p2)]);
+}
+
+// Returns the stop target when the player should keep hitting:
+// hard 17+ vs dealer 7-A; hard 12+ vs 4-6; hard 13+ vs 2-3.
+// Soft hands: until soft 18+ vs 2-8, soft 19+ vs 9, 10, A.
+function getHitTarget(playerCards, dealerCard) {
+  const dv = cardValue(dealerCard);
+  const soft = isSoft(playerCards);
+  if (soft) {
+    if (dv >= 9 || dv === 11) return { target: 19, soft: true };
+    return { target: 18, soft: true };
+  }
+  if (dv >= 7 || dv === 11) return { target: 17, soft: false };
+  if (dv === 2 || dv === 3) return { target: 13, soft: false };
+  return { target: 12, soft: false }; // vs 4, 5, 6
+}
+
+// Maps action to display style — softer / muted palette to be easier on the eyes.
+function helperAdviceStyle(act) {
+  const map = {
+    hit:       { color: '#e87b7b', bg: '#1c1213', icon: '↓' },   // soft red
+    stand:     { color: '#7ab98b', bg: '#101a14', icon: '✋' },   // sage green
+    double:    { color: '#9b8ed1', bg: '#15131c', icon: '×2' },  // soft lavender
+    split:     { color: '#d4a574', bg: '#1a1611', icon: '✂' },   // warm tan
+    surrender: { color: '#9aa3b0', bg: '#13161a', icon: '⚑' },   // light slate
+  };
+  return map[act] || map.hit;
+}
+
+// ----- Split view renderer -----
+function renderSplitHandBlock(handIdx) {
+  const hand = helperState.splitHands[handIdx];
+  const isActive = helperState.activeSplitHand === handIdx;
+  const dealer = helperRankToCard(helperState.dealer);
+  const cards = hand.cards.map(helperRankToCard);
+  const total = handTotal(cards);
+
+  // Pills for this hand
+  const pills = [];
+  hand.cards.forEach((rank, idx) => {
+    pills.push(`<div class="helper-pill" onclick="editSplitHandCard(${handIdx}, ${idx})">
+      <div class="pill-label">C${idx+1}</div>
+      <div class="pill-value filled">${rank}</div>
+    </div>`);
+  });
+  if (hand.step === 'card' && isActive) {
+    pills.push(`<div class="helper-pill active">
+      <div class="pill-label">C${hand.cards.length + 1}</div>
+      <div class="pill-value">·</div>
+    </div>`);
+  }
+  if (hand.cards.length >= 2) {
+    pills.push(`<div class="helper-pill"><div class="pill-label">=</div><div class="pill-value filled">${total}</div></div>`);
+  }
+
+  // Advice for this hand
+  let adviceBlock = '';
+  if (hand.cards.length >= 2) {
+    if (total > 21) {
+      const lbl = { pt:'ESTOUROU', en:'BUSTED', es:'PASADO', tr:'YANDI' }[currentLang] || 'BUSTED';
+      adviceBlock = `<div class="split-advice" style="background:#1c1213; border-color:#e87b7b55">
+        <div style="color:#e87b7b; font-weight:800; font-size:18px; letter-spacing:1px;">${lbl}</div>
+      </div>`;
+    } else {
+      const onFirstMove = cards.length === 2;
+      // Re-split allowed if it's a pair AND we still have room for more hands
+      const isPairCards = onFirstMove && hand.cards[0] === hand.cards[1];
+      const canResplit = isPairCards && helperState.splitHands.length < MAX_SPLIT_HANDS;
+      // Surrender never allowed after split
+      const action = basicStrategy(cards, dealer, onFirstMove, canResplit, false);
+      const style = helperAdviceStyle(action);
+      let targetHtml = '';
+      if (action === 'hit') {
+        const t = getHitTarget(cards, dealer);
+        const targetText = t.soft ? `soft ${t.target}+` : `${t.target}+`;
+        const stopLbl = { pt:'Pare em', en:'Stop at', es:'Detente en', tr:'Dur:' }[currentLang] || 'Stop at';
+        targetHtml = `<div style="font-size:11px; color:#cbd5e0; margin-top:3px;">→ ${stopLbl} <strong style="color:#d4af74;">${targetText}</strong></div>`;
+      }
+      // If strategy says split again, show a "Re-split" button on this hand
+      if (action === 'split' && canResplit) {
+        const reSplitLbl = { pt:'→ Dividir de novo', en:'→ Split again', es:'→ Dividir de nuevo', tr:'→ Tekrar böl' }[currentLang] || '→ Split again';
+        targetHtml = `<button class="helper-split-btn" style="font-size:11px; padding:6px 12px; margin-top:6px;" onclick="event.stopPropagation(); reSplitHand(${handIdx});">${reSplitLbl}</button>`;
+      }
+      adviceBlock = `<div class="split-advice" style="background:${style.bg}; border-color:${style.color}55;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div>
+            <div style="color:${style.color}; font-weight:800; font-size:22px; letter-spacing:1px;">${actionLabel(action)}</div>
+            ${targetHtml}
+          </div>
+          <div style="width:36px; height:36px; border-radius:8px; background:${style.color}22; border:1px solid ${style.color}44; color:${style.color}; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0;">${style.icon}</div>
+        </div>
+      </div>`;
+    }
+  } else {
+    const wait = { pt:'Aguardando carta...', en:'Waiting for card...', es:'Esperando carta...', tr:'Kart bekleniyor...' }[currentLang] || 'Waiting...';
+    adviceBlock = `<div class="split-advice empty">${wait}</div>`;
+  }
+
+  // "+ próxima carta" button if active and can still hit
+  let addBtn = '';
+  if (hand.step === 'done' && total < 21) {
+    const lbl = { pt:'+ próxima carta', en:'+ next card', es:'+ siguiente carta', tr:'+ sonraki kart' }[currentLang] || '+ next';
+    addBtn = `<button class="helper-add-card" style="font-size:12px; padding:8px;" onclick="helperSplitAddCard(${handIdx})">${lbl}</button>`;
+  }
+
+  const handLbl = { pt:'Mão', en:'Hand', es:'Mano', tr:'El' }[currentLang] || 'Hand';
+  return `<div class="split-hand-block ${isActive ? 'active' : ''}" onclick="setActiveSplitHand(${handIdx})">
+    <div class="split-hand-head">${handLbl} ${handIdx + 1}</div>
+    <div class="split-pills">${pills.join('')}</div>
+    ${adviceBlock}
+    ${addBtn}
+  </div>`;
+}
+
+function renderHelperSplit() {
+  document.getElementById('helper-normal-view').style.display = 'none';
+  const splitView = document.getElementById('helper-split-view');
+  splitView.style.display = 'block';
+
+  const dealerLbl = { pt:'Dealer', en:'Dealer', es:'Dealer', tr:'Kurpiyer' }[currentLang] || 'Dealer';
+  const exitLbl = { pt:'← Sair do split', en:'← Exit split', es:'← Salir del split', tr:'← Bölmeden çık' }[currentLang] || '← Exit';
+
+  // Determine if any hand still needs picking
+  const needsCard = helperState.splitHands.some(h => h.step === 'card');
+  const numbers = ['2','3','4','5','6','7','8','9','10'];
+  const letters = ['A','J','Q','K'];
+
+  let pickerHtml = '';
+  if (needsCard) {
+    const handLbl = { pt:'mão', en:'hand', es:'mano', tr:'el' }[currentLang];
+    const cardLbl = { pt:'próxima carta', en:'next card', es:'siguiente carta', tr:'sonraki kart' }[currentLang];
+    const label = `${handLbl} ${helperState.activeSplitHand + 1} — ${cardLbl}`;
+    pickerHtml = `
+      <div class="helper-picker-label">${label}</div>
+      <div class="helper-picker-grid helper-grid-numbers">
+        ${numbers.map(v => `<button onclick="helperPickValue('${v}')">${v}</button>`).join('')}
+      </div>
+      <div class="helper-picker-divider"></div>
+      <div class="helper-picker-grid helper-grid-letters">
+        ${letters.map(v => `<button onclick="helperPickValue('${v}')">${v}</button>`).join('')}
+      </div>
+    `;
+  }
+
+  splitView.innerHTML = `
+    <div class="split-dealer-bar">
+      <span class="split-dealer-label">${dealerLbl}</span>
+      <span class="split-dealer-value">${helperState.dealer}</span>
+      <button class="split-exit-btn" onclick="exitSplitMode()">${exitLbl}</button>
+    </div>
+    <div class="split-hands-stack">
+      ${helperState.splitHands.map((_, i) => renderSplitHandBlock(i)).join('')}
+    </div>
+    <div class="split-picker">${pickerHtml}</div>
+  `;
+}
+
+function renderHelper() {
+  if (helperState.splitMode) { renderHelperSplit(); return; }
+  // Hide split layout container if leaving split mode
+  const splitView = document.getElementById('helper-split-view');
+  if (splitView) splitView.style.display = 'none';
+  const normalView = document.getElementById('helper-normal-view');
+  if (normalView) normalView.style.display = '';
+
+  // ===== Pills =====
+  const pillsEl = document.getElementById('helper-pills');
+  if (pillsEl) {
+    const pillsHtml = [];
+    // Player cards (one pill per card)
+    helperState.cards.forEach((rank, idx) => {
+      pillsHtml.push(`<div class="helper-pill" onclick="helperEditPill(${idx})">
+        <div class="pill-label">C${idx+1}</div>
+        <div class="pill-value filled">${rank}</div>
+      </div>`);
+    });
+    // Active "next card" placeholder if currently picking
+    if (helperState.step === 'card') {
+      pillsHtml.push(`<div class="helper-pill active">
+        <div class="pill-label">C${helperState.cards.length + 1}</div>
+        <div class="pill-value">·</div>
+      </div>`);
+    }
+    // Dealer pill
+    pillsHtml.push(`<div class="helper-pill ${helperState.step === 'dealer' ? 'active' : ''}" onclick="helperEditPill('d')">
+      <div class="pill-label">D</div>
+      <div class="pill-value ${helperState.dealer ? 'filled' : ''}">${helperState.dealer || '·'}</div>
+    </div>`);
+    // Total pill if 2+ cards
+    if (helperState.cards.length >= 2) {
+      const total = handTotal(helperState.cards.map(helperRankToCard));
+      pillsHtml.push(`<div class="helper-pill"><div class="pill-label">=</div><div class="pill-value filled">${total}</div></div>`);
+    }
+    pillsEl.innerHTML = pillsHtml.join('');
+  }
+
+  // ===== Advice + probabilities =====
+  const adviceEl = document.getElementById('helper-advice');
+  const probsEl = document.getElementById('helper-probs');
+  const ready = helperState.cards.length >= 2 && helperState.dealer;
+
+  if (adviceEl && ready) {
+    const cards = helperState.cards.map(helperRankToCard);
+    const dealer = helperRankToCard(helperState.dealer);
+    const total = handTotal(cards);
+
+    if (total > 21) {
+      // BUST
+      const bustLabel = { pt: 'ESTOUROU', en: 'BUSTED', es: 'PASADO', tr: 'YANDI' }[currentLang] || 'BUSTED';
+      const bustReason = { pt: 'Total passou de 21. Mão perdida.', en: 'Total over 21. Hand lost.', es: 'Total más de 21. Mano perdida.', tr: '21\'i geçti. El kaybedildi.' }[currentLang];
+      adviceEl.className = 'helper-advice filled';
+      adviceEl.style.background = '#1a0707';
+      adviceEl.style.borderColor = '#dc262655';
+      adviceEl.innerHTML = `
+        <div>
+          <div class="advice-label" style="color:#dc2626">${bustLabel}</div>
+          <div class="advice-reason">${bustReason}</div>
+        </div>
+        <div class="advice-icon" style="background:#dc262622; border:1px solid #dc262644; color:#dc2626">✕</div>
+      `;
+      if (probsEl) probsEl.style.display = 'none';
+    } else {
+      // Compute strategy. After 2 cards we get full options; after more, only hit/stand.
+      const onFirstMove = cards.length === 2;
+      const isPairCards = onFirstMove && cards[0].rank === cards[1].rank;
+      const action = basicStrategy(cards, dealer, onFirstMove, isPairCards, onFirstMove);
+      const style = helperAdviceStyle(action);
+      const reason = actionExplanation(action, cards, dealer);
+      // When advice is HIT, show the stop target (e.g. "Stop at 17+")
+      let targetHtml = '';
+      if (action === 'hit') {
+        const t = getHitTarget(cards, dealer);
+        const targetText = t.soft ? `soft ${t.target}+` : `${t.target}+`;
+        const stopLabels = {
+          pt: 'Pare em', en: 'Stop at', es: 'Detente en', tr: 'Dur:',
+        };
+        const stopLbl = stopLabels[currentLang] || stopLabels.en;
+        targetHtml = `<div class="advice-target">→ ${stopLbl} <strong>${targetText}</strong></div>`;
+      }
+      // When advice is SPLIT, show a button to enter split mode
+      if (action === 'split') {
+        const splitBtnLbl = { pt: '→ Dividir agora', en: '→ Split now', es: '→ Dividir ahora', tr: '→ Şimdi böl' }[currentLang] || '→ Split now';
+        targetHtml = `<button class="helper-split-btn" onclick="event.stopPropagation(); enterSplitMode();">${splitBtnLbl}</button>`;
+      }
+      adviceEl.className = 'helper-advice filled';
+      adviceEl.style.background = style.bg;
+      adviceEl.style.borderColor = style.color + '55';
+      adviceEl.innerHTML = `
+        <div>
+          <div class="advice-label" style="color:${style.color}">${actionLabel(action)}</div>
+          ${targetHtml}
+          <div class="advice-reason">${reason}</div>
+        </div>
+        <div class="advice-icon" style="background:${style.color}22; border:1px solid ${style.color}44; color:${style.color}">${style.icon}</div>
+      `;
+      // Win probabilities
+      if (probsEl) {
+        const probs = simulateOutcome(cards, dealer, 1500);
+        const labels = {
+          pt: { win: 'Vitória', push: 'Empate', loss: 'Derrota' },
+          en: { win: 'Win', push: 'Push', loss: 'Loss' },
+          es: { win: 'Ganar', push: 'Empate', loss: 'Perder' },
+          tr: { win: 'Kazanma', push: 'Beraberlik', loss: 'Kaybetme' },
+        };
+        const L = labels[currentLang] || labels.en;
+        const pct = (x) => Math.round(x * 100) + '%';
+        probsEl.style.display = 'flex';
+        probsEl.innerHTML = `
+          <div class="prob-item">
+            <div class="prob-label">${L.win}</div>
+            <div class="prob-value win">${pct(probs.win)}</div>
+            <div class="prob-bar"><div class="prob-fill win" style="width:${probs.win*100}%"></div></div>
+          </div>
+          <div class="prob-item">
+            <div class="prob-label">${L.push}</div>
+            <div class="prob-value push">${pct(probs.push)}</div>
+            <div class="prob-bar"><div class="prob-fill push" style="width:${probs.push*100}%"></div></div>
+          </div>
+          <div class="prob-item">
+            <div class="prob-label">${L.loss}</div>
+            <div class="prob-value loss">${pct(probs.loss)}</div>
+            <div class="prob-bar"><div class="prob-fill loss" style="width:${probs.loss*100}%"></div></div>
+          </div>
+        `;
+      }
+    }
+  } else if (adviceEl) {
+    const placeholders = {
+      pt: 'selecione as cartas abaixo',
+      en: 'select the cards below',
+      es: 'selecciona las cartas',
+      tr: 'aşağıdaki kartları seç',
+    };
+    adviceEl.className = 'helper-advice';
+    adviceEl.style.background = '';
+    adviceEl.style.borderColor = '';
+    adviceEl.innerHTML = placeholders[currentLang] || placeholders.en;
+    if (probsEl) probsEl.style.display = 'none';
+  }
+
+  // ===== Picker / done state =====
+  const pickerEl = document.getElementById('helper-picker-section');
+  if (pickerEl) {
+    if (helperState.step === 'done') {
+      // Show "+ next card" button if hand is still playable
+      const total = handTotal(helperState.cards.map(helperRankToCard));
+      if (total < 21) {
+        const addLabels = {
+          pt: '+ próxima carta', en: '+ next card', es: '+ siguiente carta', tr: '+ sonraki kart',
+        };
+        pickerEl.innerHTML = `<button class="helper-add-card" onclick="helperAddCard()">${addLabels[currentLang] || addLabels.en}</button>`;
+      } else {
+        pickerEl.innerHTML = '';
+      }
+    } else {
+      const numbers = ['2','3','4','5','6','7','8','9','10'];
+      const letters = ['A','J','Q','K'];
+      // Contextual label for the picker, matching real-table dealing order (C1 → D → C2)
+      let label;
+      if (helperState.step === 'dealer') {
+        label = { pt: 'carta do dealer', en: 'dealer card', es: 'carta del dealer', tr: 'kurpiyer kartı' }[currentLang] || 'dealer card';
+      } else {
+        // step === 'card' — figure out which card slot we're filling
+        const n = helperState.cards.length + 1;
+        const ord = (i, lang) => {
+          if (lang === 'pt' || lang === 'es') return i + 'ª';
+          if (lang === 'tr') return i + '.';
+          const s = ['th','st','nd','rd'], v = i % 100;
+          return i + (s[(v-20)%10] || s[v] || s[0]);
+        };
+        const tpl = { pt: ` carta`, en: ` card`, es: ` carta`, tr: ` kartın` };
+        const prefix = { pt: 'sua ', en: 'your ', es: 'tu ', tr: '' };
+        label = (prefix[currentLang] || prefix.en) + ord(n, currentLang) + (tpl[currentLang] || tpl.en);
+      }
+      pickerEl.innerHTML = `
+        <div class="helper-picker-label">${label}</div>
+        <div class="helper-picker-grid helper-grid-numbers">
+          ${numbers.map(v => `<button onclick="helperPickValue('${v}')">${v}</button>`).join('')}
+        </div>
+        <div class="helper-picker-divider"></div>
+        <div class="helper-picker-grid helper-grid-letters">
+          ${letters.map(v => `<button onclick="helperPickValue('${v}')">${v}</button>`).join('')}
+        </div>
+      `;
+    }
+  }
 }
 
 function restartGame() {
@@ -4148,7 +5153,8 @@ function autoLoop() {
     const onFirstMove = hand.cards.length === 2 && !hand.doubled && !hand.isSplitAces;
     const canDouble = onFirstMove && state.balance >= hand.bet;
     const canSplit = onFirstMove && isPair(hand.cards) && state.playerHands.length === 1 && state.balance >= hand.bet;
-    const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0;
+    const dealerNotAce = state.dealerCards.length > 0 && state.dealerCards[0].rank !== 'A';
+  const canSurrender = onFirstMove && state.playerHands.length === 1 && state.activeHandIdx === 0 && dealerNotAce;
     const optimal = basicStrategy(hand.cards, state.dealerCards[0], canDouble, canSplit, canSurrender);
     state.autoTimer = setTimeout(() => {
       action(optimal);
