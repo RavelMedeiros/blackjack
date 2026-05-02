@@ -2497,7 +2497,7 @@ function pairAction(pairVal, dv) {
   }
   if (pairVal === 8) return 'P';             // 8,8 always split
   if (pairVal === 7) return dv <= 7 ? 'P' : 'H';
-  if (pairVal === 6) return dv <= 6 ? 'P' : 'H';
+  if (pairVal === 6) return dv <= 7 ? 'P' : 'H';  // DAS: split vs 2-7
   if (pairVal === 5) return (dv >= 2 && dv <= 9) ? 'D' : 'H'; // treat as 10
   if (pairVal === 4) return (dv === 5 || dv === 6) ? 'P' : 'H';
   if (pairVal === 3) return dv <= 7 ? 'P' : 'H';
